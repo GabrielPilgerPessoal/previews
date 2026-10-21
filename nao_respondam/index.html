@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Não Respondam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap">
+<style>
+/* Palco 16:9 fixo (1600×900) escalado para a tela; céu estrelado global por trás; uma cor de alerta (vermelho de caneta) e uma de rádio (hidrogênio). */
+:root{
+  --void:#04060b;
+  --ink:#e9e6dc;
+  --dim:#8a8f9c;
+  --faint:#3a3f4b;
+  --alarm:#e0362c;
+  --radio:#8fd3ff;
+  --paper:#ece6d4;
+  --paper-ink:#2b2a27;
+  --display:'Anton','Impact','Arial Narrow Bold',sans-serif;
+  --body:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --mono:'IBM Plex Mono','Courier New',monospace;
+  --hand:'Caveat','Comic Sans MS',cursive;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--void);color:var(--ink);overflow:hidden;font-family:var(--body);cursor:none}
+body.cursor{cursor:default}
+#sky{position:fixed;inset:0;width:100%;height:100%;display:block}
+#fx{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#stage{position:fixed;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center}
+.slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .9s ease,visibility 0s linear .9s}
+.slide.active{opacity:1;visibility:visible;transition:opacity .9s ease}
+[data-step]{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+[data-step].on{opacity:1;transform:none}
+[data-step="0"]{opacity:1;transform:none}
+
+.eyebrow{font-family:var(--mono);font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.big{font-family:var(--display);font-weight:400;line-height:.95;letter-spacing:.01em;text-wrap:balance;margin:0}
+.lead{font-family:var(--body);font-weight:300;font-size:44px;line-height:1.25;text-wrap:balance;margin:0}
+.lead b{font-weight:600}
+.alarm{color:var(--alarm)}
+.radio{color:var(--radio)}
+.credit{position:absolute;font-family:var(--mono);font-size:13px;color:var(--dim);opacity:.75;letter-spacing:.02em}
+
+/* Fotos */
+.photo{position:absolute;overflow:hidden;background:#0b0e15}
+.photo img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.08);transition:transform 14s ease-out;filter:grayscale(.15) contrast(1.05)}
+.slide.active .photo img{transform:scale(1)}
+.photo.missing img{display:none}
+.photo.missing::after{content:attr(data-alt);position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:20px;color:var(--dim);padding:40px;text-align:center}
+.shade-l::before,.shade-r::before,.shade-b::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none}
+.shade-l::before{background:linear-gradient(90deg,var(--void) 0%,rgba(4,6,11,.85) 28%,rgba(4,6,11,0) 62%)}
+.shade-r::before{background:linear-gradient(270deg,var(--void) 0%,rgba(4,6,11,.85) 30%,rgba(4,6,11,0) 64%)}
+.shade-b::before{background:linear-gradient(0deg,var(--void) 0%,rgba(4,6,11,.7) 30%,rgba(4,6,11,0) 60%)}
+
+/* 1 · Título */
+#s-title .wrap{position:absolute;inset:0;display:grid;place-content:center;text-align:center;gap:28px}
+#s-title .big{font-size:230px;color:var(--ink)}
+#s-title .big span{display:inline-block;opacity:0}
+#s-title.active .big span{animation:flick 1.6s steps(1) forwards}
+@keyframes flick{0%{opacity:0}8%{opacity:.8}12%{opacity:0}20%{opacity:1}26%{opacity:.2}34%,100%{opacity:1}}
+#s-title .sub{font-family:var(--body);font-weight:300;font-style:italic;font-size:38px;color:var(--dim)}
+
+/* 2 · Floresta */
+#forest{position:absolute;inset:0;width:100%;height:100%}
+#s-forest .fog{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 85%,rgba(160,170,190,.10),transparent 60%);animation:fog 9s ease-in-out infinite alternate}
+@keyframes fog{to{transform:translateX(-40px);opacity:.6}}
+#s-forest .crack{position:absolute;left:0;right:0;top:300px;text-align:center;font-family:var(--display);font-size:120px;letter-spacing:.3em;color:var(--ink)}
+#s-forest .rule{position:absolute;left:0;right:0;bottom:120px;text-align:center}
+#s-forest .rule .lead{font-size:54px}
+.shake{animation:shake .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translate(-3px,1px)}20%,80%{transform:translate(5px,-2px)}30%,50%,70%{transform:translate(-8px,3px)}40%,60%{transform:translate(8px,-2px)}}
+
+/* 3 · Trinity */
+#s-trinity .photo{inset:0}
+#s-trinity .txt{position:absolute;left:110px;bottom:110px;z-index:2;display:grid;gap:22px;max-width:900px}
+#s-trinity .big{font-size:120px}
+#s-trinity .credit{right:40px;bottom:24px;z-index:2}
+
+/* 4 · Fermi */
+#s-fermi .photo{left:0;top:0;bottom:0;width:760px}
+#s-fermi .photo img{filter:grayscale(1) contrast(1.1)}
+#s-fermi .txt{position:absolute;left:860px;right:110px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:34px}
+#s-fermi .big{font-size:150px}
+#s-fermi .credit{left:30px;bottom:24px;z-index:2}
+.bet{display:flex;gap:18px;align-items:center;font-family:var(--mono);font-size:28px}
+.bet span{border:1.5px solid var(--faint);padding:10px 18px}
+.bet span.alarm{border-color:var(--alarm)}
+
+/* 5 · Paradoxo */
+#s-paradox .wrap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:30px;text-align:center}
+#s-paradox .count{font-family:var(--mono);font-weight:500;font-size:96px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+#s-paradox .cap{font-family:var(--mono);font-size:22px;color:var(--dim);letter-spacing:.06em}
+#s-paradox .big{font-size:140px;margin-top:20px}
+#s-paradox .tag{font-family:var(--mono);font-size:26px;letter-spacing:.3em;color:var(--alarm);border:1.5px solid var(--alarm);padding:10px 22px}
+
+/* 6 · 1947 */
+#s-1947 .photo{left:0;top:0;bottom:0;width:820px}
+#s-1947 .photo img{object-position:top;filter:grayscale(1) sepia(.25) contrast(1.1)}
+#s-1947 .credit{left:30px;bottom:24px;z-index:2}
+#s-1947 .right{position:absolute;left:900px;right:90px;top:90px;bottom:90px;display:flex;flex-direction:column;gap:30px}
+#nm{width:100%;height:470px}
+#nm .state{fill:none;stroke:var(--dim);stroke-width:2}
+#nm .route{fill:none;stroke:var(--alarm);stroke-width:2.5;stroke-dasharray:10 8}
+#nm text{font-family:var(--mono);font-size:22px;fill:var(--ink)}
+#nm .small{font-size:17px;fill:var(--dim)}
+#s-1947 .lead{font-size:34px}
+
+/* 7 · Arecibo */
+#s-arecibo .photo{inset:0}
+#s-arecibo .txt{position:absolute;left:110px;top:120px;z-index:2;display:grid;gap:10px}
+#s-arecibo .word{font-family:var(--display);font-size:220px;line-height:.9;position:relative;display:inline-block}
+#s-arecibo .strikeline{position:absolute;left:-10px;right:-10px;top:48%;height:16px;background:var(--alarm);transform-origin:left;opacity:1;transform:scaleX(0);transition:transform .6s ease .1s}
+#s-arecibo .strikeline.on{transform:scaleX(1)}
+#s-arecibo .boca{color:var(--alarm)}
+#s-arecibo .credit{right:40px;bottom:24px;z-index:2}
+#s-arecibo .meta{position:absolute;left:110px;bottom:100px;z-index:2}
+
+/* 8 · Mensagem */
+#s-msg .msgbox{position:absolute;left:180px;top:60px;bottom:60px;width:300px;background:#000;border:1px solid var(--faint)}
+#s-msg .msgbox img{width:100%;height:100%;object-fit:contain;clip-path:inset(0 0 100% 0)}
+#s-msg.active .msgbox img{animation:scan 5s steps(73) .4s forwards}
+@keyframes scan{to{clip-path:inset(0 0 0 0)}}
+#s-msg .txt{position:absolute;left:620px;right:110px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:30px}
+#s-msg .big{font-size:140px}
+#s-msg .legend{display:grid;grid-template-columns:auto 1fr;gap:10px 22px;font-family:var(--mono);font-size:24px;color:var(--dim)}
+#s-msg .legend b{color:var(--ink);font-weight:500}
+#s-msg .credit{left:180px;bottom:24px}
+
+/* 9 · Voyager */
+#s-voyager .disc{position:absolute;left:150px;top:110px;width:680px;height:680px;border-radius:50%;overflow:hidden;box-shadow:0 0 120px rgba(214,170,80,.18)}
+#s-voyager .disc img{width:100%;height:100%;object-fit:cover}
+#s-voyager.active .disc img{animation:spin 90s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#s-voyager .txt{position:absolute;left:920px;right:110px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:30px}
+#s-voyager .big{font-size:130px}
+#s-voyager .credit{left:150px;bottom:24px}
+
+/* 10 · 6EQUJ5 */
+#s-wow .paper{position:absolute;left:100px;top:80px;width:760px;height:740px;background:var(--paper);color:var(--paper-ink);box-shadow:0 30px 80px rgba(0,0,0,.6);transform:rotate(-1.2deg);overflow:hidden}
+#s-wow .paper::before{content:"";position:absolute;left:0;top:0;bottom:0;width:38px;background:repeating-linear-gradient(180deg,transparent 0 22px,rgba(0,0,0,.18) 22px 34px,transparent 34px 46px);border-right:1px dashed rgba(0,0,0,.2)}
+#grid{position:absolute;left:62px;top:40px;font-family:var(--mono);font-size:30px;line-height:42px;white-space:pre;letter-spacing:.42em}
+#grid .hit{position:relative;color:transparent;transition:color .4s}
+#grid .hit.on{color:var(--paper-ink);text-shadow:0 0 0 currentColor}
+#grid .hit.on.flash{animation:hitflash 1s ease}
+@keyframes hitflash{0%{color:var(--alarm);text-shadow:0 0 18px var(--alarm)}100%{color:var(--paper-ink)}}
+#ring{position:absolute;left:0;top:0;width:760px;height:740px;pointer-events:none}
+#ring path{fill:none;stroke:#c62828;stroke-width:4;stroke-linecap:round;stroke-dasharray:1200;stroke-dashoffset:1200}
+#ring.on path{transition:stroke-dashoffset 1.1s ease;stroke-dashoffset:0}
+#s-wow .wowword{position:absolute;font-family:var(--hand);color:#c62828;font-size:96px;transform:rotate(-8deg)}
+#s-wow .side{position:absolute;left:960px;right:90px;top:80px;bottom:80px;display:flex;flex-direction:column;gap:26px}
+#s-wow .key{font-family:var(--mono);font-size:24px;color:var(--dim);line-height:1.6}
+#s-wow .key b{color:var(--ink);font-weight:500}
+#bars{display:flex;align-items:flex-end;gap:22px;height:400px;border-bottom:1.5px solid var(--faint);padding:0 6px}
+#bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;height:100%}
+#bars .fill{width:100%;height:0;background:linear-gradient(180deg,var(--alarm),rgba(224,54,44,.25));transition:height .8s cubic-bezier(.2,.8,.2,1)}
+#bars .lbl{font-family:var(--mono);font-size:30px;color:var(--dim);transition:color .4s}
+#bars .bar.on .lbl{color:var(--ink)}
+#bars .val{font-family:var(--mono);font-size:18px;color:var(--dim);opacity:0;transition:opacity .4s}
+#bars .bar.on .val{opacity:1}
+#s-wow .noise{font-family:var(--mono);font-size:18px;color:var(--dim);display:flex;justify-content:space-between}
+#s-wow .orig{position:absolute;left:520px;top:440px;width:420px;z-index:3;border:1px solid var(--faint);box-shadow:0 20px 60px rgba(0,0,0,.7)}
+#s-wow .orig img{transform:none;filter:none}
+#s-wow .credit{left:100px;bottom:24px}
+#s-wow .dur{font-family:var(--display);font-size:64px;color:var(--ink)}
+
+/* 11 · Datas */
+#s-dates .wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:0}
+.date{display:flex;flex-direction:column;gap:14px;width:520px}
+.date .d{font-family:var(--display);font-size:200px;line-height:.9}
+.date .w{font-family:var(--mono);font-size:28px;letter-spacing:.08em;color:var(--dim)}
+.gap{width:320px;display:flex;flex-direction:column;align-items:center;gap:16px;font-family:var(--mono);font-size:26px;color:var(--alarm)}
+.gap i{display:block;width:100%;height:2px;background:var(--alarm);transform-origin:left;transform:scaleX(0);transition:transform 1s ease}
+.gap.on i{transform:scaleX(1)}
+
+/* 12 · Não respondam */
+#s-quote .wrap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding-left:160px;gap:6px}
+#s-quote .q{font-family:var(--display);font-size:150px;line-height:1}
+#s-quote .q:nth-child(2){color:var(--dim)}
+#s-quote .q.on:nth-child(3){color:var(--alarm)}
+#s-quote .src{font-family:var(--mono);font-size:22px;color:var(--dim);margin-top:36px;opacity:1;transform:none}
+#s-quote .def{position:absolute;right:120px;bottom:110px;width:620px;border-left:2px solid var(--alarm);padding-left:28px}
+#s-quote .def .lead{font-size:34px}
+
+/* 13 · Oumuamua */
+#s-oumu .photo{inset:0}
+#s-oumu .txt{position:absolute;right:110px;top:0;bottom:0;width:720px;z-index:2;display:flex;flex-direction:column;justify-content:center;gap:34px}
+#s-oumu .big{font-size:150px}
+#s-oumu .credit{left:40px;bottom:24px;z-index:2}
+.news{font-family:var(--mono);font-size:26px;line-height:1.5;border-top:1.5px solid var(--faint);padding-top:22px}
+
+/* 14 · Mapa do céu */
+#s-map .photo{left:0;top:0;bottom:0;width:560px}
+#s-map .credit{left:30px;bottom:24px;z-index:2}
+#skymap{position:absolute;left:640px;top:80px;width:880px;height:600px}
+#skymap .gridl{stroke:var(--faint);stroke-width:1}
+#skymap text{font-family:var(--mono);fill:var(--dim);font-size:18px}
+#skymap .t-big{font-size:24px;fill:var(--ink)}
+#skymap .wowmk{fill:none;stroke:var(--alarm);stroke-width:3}
+#skymap .atl{stroke:var(--radio);stroke-width:3;fill:none}
+#skymap .arc{stroke:var(--ink);stroke-width:2;fill:none;stroke-dasharray:6 6}
+#skymap .pulse{transform-box:fill-box;transform-origin:center;animation:pulse 2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:1}100%{transform:scale(2.2);opacity:0}}
+#s-map .stats{position:absolute;left:640px;right:80px;bottom:70px;display:flex;align-items:flex-end;justify-content:space-between;gap:40px}
+#s-map .pct{font-family:var(--display);font-size:120px;line-height:.9}
+#s-map .pct small{display:block;font-family:var(--mono);font-size:20px;color:var(--dim);letter-spacing:.04em;margin-top:10px}
+#s-map .skeptic{font-family:var(--body);font-style:italic;font-weight:300;font-size:26px;color:var(--dim);max-width:460px;text-align:right}
+
+/* 15 · Relatório */
+#orbits{position:absolute;inset:0;width:100%;height:100%}
+#orbits .orb{fill:none;stroke:var(--faint);stroke-width:1.5}
+#orbits .path{fill:none;stroke:var(--radio);stroke-width:1.5;stroke-dasharray:4 7;opacity:.6}
+#orbits text{font-family:var(--mono);font-size:17px;fill:var(--dim)}
+#s-report .q{position:absolute;left:110px;bottom:110px;max-width:760px}
+#s-report .big{font-size:120px}
+#s-report .eyebrow{position:absolute;left:110px;top:90px}
+
+/* 16 · Garrafa */
+#s-bottle .wrap{position:absolute;inset:0;display:grid;grid-template-columns:620px 1fr;align-items:center;padding:0 110px 0 160px;gap:40px}
+#bottle{width:360px;height:720px;justify-self:center}
+#bottle .glass{fill:rgba(180,210,230,.06);stroke:rgba(220,235,245,.55);stroke-width:3}
+#bottle .ice{opacity:0}
+#s-bottle.frozen #bottle .ice{animation:freeze 1.8s ease-out .25s forwards}
+@keyframes freeze{from{opacity:1;clip-path:inset(0 0 100% 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
+#s-bottle .therm{font-family:var(--mono);font-size:34px;color:var(--radio)}
+#s-bottle .txt{display:flex;flex-direction:column;gap:30px}
+#s-bottle .big{font-size:120px}
+.tap{position:absolute;width:60px;height:60px;border:3px solid var(--ink);border-radius:50%;opacity:0;left:440px;top:80px}
+#s-bottle.frozen .tap{animation:tap .8s ease-out}
+@keyframes tap{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(2.4)}}
+
+/* 17 · Falso vácuo */
+#s-vacuum .top{position:absolute;left:110px;top:90px;display:grid;gap:16px;max-width:900px}
+#s-vacuum .top .lead{font-size:38px}
+#s-vacuum .bot{position:absolute;left:110px;bottom:100px;display:grid;gap:14px;max-width:1100px}
+#s-vacuum .big{font-size:130px}
+
+/* 18 · Linha do tempo */
+#s-timeline .wrap{position:absolute;left:110px;right:110px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:50px}
+.tl{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:24px}
+.tl::before{content:"";position:absolute;left:0;right:0;top:118px;height:2px;background:var(--faint)}
+.tl .n{display:flex;flex-direction:column;gap:14px;position:relative}
+.tl .y{font-family:var(--display);font-size:96px;line-height:1}
+.tl .dot{width:18px;height:18px;border-radius:50%;background:var(--ink);margin:4px 0 10px}
+.tl .n:nth-child(3) .dot,.tl .n:nth-child(5) .dot{background:var(--alarm);box-shadow:0 0 22px var(--alarm)}
+.tl .l{font-family:var(--body);font-weight:300;font-size:30px;line-height:1.3}
+
+/* 19 · Céu vazio */
+#s-empty .line{position:absolute;left:0;right:0;bottom:130px;text-align:center}
+#s-empty .lead{font-size:46px;color:var(--dim)}
+#s-empty .lead b{color:var(--ink);font-weight:400}
+
+/* 20 · Final */
+#s-final .wrap{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+#s-final .big{font-size:230px;color:var(--alarm);opacity:0;transition:opacity 3s ease 1.2s}
+#s-final.active .big{opacity:1}
+
+/* HUD */
+#hud{position:fixed;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.04);transition:opacity .4s}
+#hud i{display:block;height:100%;width:0;background:var(--alarm);transition:width .6s ease}
+#num{position:fixed;right:18px;bottom:12px;font-family:var(--mono);font-size:12px;color:var(--faint);transition:opacity .4s}
+body.nohud #hud,body.nohud #num{opacity:0}
+#black{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s;z-index:50}
+body.blackout #black{opacity:1}
+#help{position:fixed;left:50%;top:40px;transform:translateX(-50%);z-index:40;font-family:var(--mono);font-size:14px;color:var(--dim);background:rgba(10,12,18,.9);border:1px solid var(--faint);padding:14px 20px;line-height:1.7;transition:opacity .6s}
+#help.gone{opacity:0;pointer-events:none}
+#help b{color:var(--ink);font-weight:500}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.2s!important}
+}
+</style>
+</head>
+<body class="cursor">
+<canvas id="sky"></canvas>
+<canvas id="fx"></canvas>
+
+<div id="stage">
+
+  <!-- 1 -->
+  <section class="slide" id="s-title" data-steps="1" data-stars="0.55">
+    <div class="wrap">
+      <h1 class="big"><span style="animation-delay:.1s">NÃO</span> <span style="animation-delay:.5s">RESPONDAM</span></h1>
+      <div class="sub" data-step="1">Por que o universo está em silêncio, e quem pode estar ouvindo</div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide" id="s-forest" data-steps="2" data-stars="0.25">
+    <canvas id="forest"></canvas>
+    <div class="fog"></div>
+    <div class="crack" data-step="1">crac.</div>
+    <div class="rule" data-step="2"><p class="lead">Quem grita primeiro, <b class="alarm">morre primeiro.</b></p></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" id="s-trinity" data-steps="1" data-stars="0">
+    <div class="photo shade-b" data-alt="Teste Trinity, 16/07/1945"><img data-src="https://upload.wikimedia.org/wikipedia/commons/7/78/Trinity_Test_Fireball_16ms.jpg" alt="Bola de fogo do teste Trinity, 16 milissegundos após a detonação"></div>
+    <div class="txt">
+      <div class="eyebrow">16 · 07 · 1945 — Novo México — 05h29</div>
+      <h2 class="big">Teste Trinity</h2>
+      <p class="lead" data-step="1">E se a explosão <b class="alarm">incendiar a atmosfera</b> do planeta inteiro?</p>
+    </div>
+    <div class="credit">Foto: Berlyn Brixner / Los Alamos National Laboratory · domínio público</div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide" id="s-fermi" data-steps="1" data-stars="0.2">
+    <div class="photo shade-r" data-alt="Enrico Fermi"><img data-src="https://upload.wikimedia.org/wikipedia/commons/4/43/Enrico_Fermi_1943-49_%28cropped%29.jpg" alt="Retrato de Enrico Fermi"></div>
+    <div class="txt">
+      <div class="eyebrow">Físico · Prêmio Nobel de 1938</div>
+      <h2 class="big">Enrico<br>Fermi</h2>
+      <div data-step="1" style="display:grid;gap:22px">
+        <p class="lead" style="font-size:36px">Na noite anterior ao teste, ele fazia apostas com os colegas:</p>
+        <div class="bet"><span>o mundo continua</span><span class="alarm">o mundo acaba</span></div>
+      </div>
+    </div>
+    <div class="credit">Foto: U.S. Department of Energy · domínio público</div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide" id="s-paradox" data-steps="2" data-stars="1">
+    <div class="wrap">
+      <div class="count" id="count">0</div>
+      <div class="cap">estrelas só na Via Láctea · estimativa entre 100 e 400 bilhões</div>
+      <div data-step="1" style="display:grid;gap:12px;justify-items:center">
+        <div class="eyebrow">1950 · almoço em Los Alamos</div>
+        <h2 class="big">“Onde está todo mundo?”</h2>
+      </div>
+      <div class="tag" data-step="2">PARADOXO DE FERMI</div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide" id="s-1947" data-steps="2" data-stars="0.15">
+    <div class="photo shade-r" data-alt="Roswell Daily Record, 8 de julho de 1947"><img data-src="https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Roswell_Daily_Record._July_8%2C_1947._RAAF_Captures_Flying_Saucer_On_Ranch_in_Roswell_Region._Top_of_front_page.jpg/1920px-Roswell_Daily_Record._July_8%2C_1947._RAAF_Captures_Flying_Saucer_On_Ranch_in_Roswell_Region._Top_of_front_page.jpg" alt="Capa do Roswell Daily Record de 8 de julho de 1947"></div>
+    <div class="right">
+      <div class="eyebrow">Julho de 1947</div>
+      <svg id="nm" viewBox="0 0 620 470" data-step="1" aria-label="Mapa do Novo México com Trinity e Roswell">
+        <polygon class="state" id="nmpoly" points=""></polygon>
+        <path class="route" id="nmroute" d=""></path>
+        <g id="nmpts"></g>
+      </svg>
+      <p class="lead" data-step="2">A base de Roswell abrigava a <b>única unidade do mundo com bombas atômicas</b>: a que bombardeou Hiroshima e Nagasaki.</p>
+    </div>
+    <div class="credit">Roswell Daily Record, 08/07/1947 · domínio público</div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide" id="s-arecibo" data-steps="2" data-stars="0">
+    <div class="photo shade-l" data-alt="Radiotelescópio de Arecibo"><img data-src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Arecibo_Observatory_Aerial_View.jpg" alt="Vista aérea do radiotelescópio de Arecibo"></div>
+    <div class="txt">
+      <div class="word">ORELHA<i class="strikeline" data-step="1"></i></div>
+      <div class="word boca" data-step="2">BOCA</div>
+    </div>
+    <div class="meta"><div class="eyebrow">Arecibo · Porto Rico · 305 metros</div></div>
+    <div class="credit">Foto: H. Schweiker/WIYN e NOAO/AURA/NSF · CC BY 4.0</div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" id="s-msg" data-steps="2" data-stars="0.6">
+    <div class="msgbox photo" data-alt="Mensagem de Arecibo"><img data-src="https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Arecibo_message.svg/1920px-Arecibo_message.svg.png" alt="A Mensagem de Arecibo em pixels" style="transform:none"></div>
+    <div class="txt">
+      <div class="eyebrow">16 · 11 · 1974</div>
+      <h2 class="big">A Mensagem<br>de Arecibo</h2>
+      <div class="legend" data-step="1">
+        <span>conteúdo</span><b>números · DNA · um ser humano · a posição da Terra</b>
+        <span>autores</span><b>Frank Drake e Carl Sagan</b>
+      </div>
+      <p class="lead" data-step="2" style="font-size:34px">Drake criou a equação que estima <b>quantas civilizações existem</b> na galáxia. E depois mandou o nosso endereço.</p>
+    </div>
+    <div class="credit">Ilustração: Arne Nordmann · CC BY-SA 3.0</div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide" id="s-voyager" data-steps="1" data-stars="0.7">
+    <div class="disc photo" data-alt="Disco de Ouro da Voyager"><img data-src="https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/The_Sounds_of_Earth_Record_Cover_-_GPN-2000-001978.jpg/1920px-The_Sounds_of_Earth_Record_Cover_-_GPN-2000-001978.jpg" alt="Capa do Disco de Ouro das Voyager" style="transform:none"></div>
+    <div class="txt">
+      <div class="eyebrow">Agosto de 1977 · NASA</div>
+      <h2 class="big">O Disco<br>de Ouro</h2>
+      <p class="lead" data-step="1" style="font-size:36px">Músicas, sons, saudações em 55 línguas… e um <b class="alarm">mapa de pulsares que aponta para o Sol</b>.</p>
+    </div>
+    <div class="credit">Foto: NASA/JPL · domínio público</div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide" id="s-wow" data-steps="8" data-stars="0.1">
+    <div class="paper">
+      <div id="grid"></div>
+      <svg id="ring" viewBox="0 0 760 740"><path id="ringpath" d=""></path></svg>
+      <div class="wowword" id="wowword" data-step="7">Wow!</div>
+    </div>
+    <div class="side">
+      <div class="eyebrow">15 · 08 · 1977 · Big Ear · Ohio</div>
+      <div class="key">1 a 9 → números<br>10 ou mais → letras: <b>A</b>=10, <b>B</b>=11… <b>U</b>=30<br>quanto maior, mais forte o sinal</div>
+      <div id="bars"></div>
+      <div class="noise"><span>ruído de fundo ≈ 1</span><span class="dur" data-step="6">72 s</span></div>
+    </div>
+    <div class="orig photo" data-step="8" data-alt="Folha original do Sinal Wow!"><img data-src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Wow_signal.jpg" alt="Folha original com o Sinal Wow! circulado"></div>
+    <div class="credit">Folha original: Big Ear Radio Observatory e NAAPO · domínio público</div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide" id="s-dates" data-steps="2" data-stars="0.4">
+    <div class="wrap">
+      <div class="date"><div class="d">15/08</div><div class="w">1977 · o Sinal Wow! é captado</div></div>
+      <div class="gap" data-step="2"><i></i><span>5 dias</span></div>
+      <div class="date" data-step="1"><div class="d alarm">20/08</div><div class="w">a Voyager 2 é lançada, com o nosso mapa</div></div>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" id="s-quote" data-steps="4" data-stars="0.3">
+    <div class="wrap">
+      <div class="q" data-step="1">Não respondam.</div>
+      <div class="q" data-step="2">Não respondam.</div>
+      <div class="q" data-step="3">Não respondam.</div>
+      <div class="src">O Problema dos Três Corpos · Liu Cixin · 2006–2010</div>
+    </div>
+    <div class="def" data-step="4">
+      <div class="eyebrow alarm" style="margin-bottom:14px">Floresta Sombria</div>
+      <p class="lead">O universo não está vazio. Quem sobreviveu aprendeu a <b>ficar quieto</b>.</p>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide" id="s-oumu" data-steps="2" data-stars="0">
+    <div class="photo shade-r" data-alt="Ilustração do ʻOumuamua"><img data-src="https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Artist%E2%80%99s_impression_of_the_interstellar_asteroid_%60Oumuamua.jpg/1920px-Artist%E2%80%99s_impression_of_the_interstellar_asteroid_%60Oumuamua.jpg" alt="Ilustração artística do objeto interestelar ʻOumuamua"></div>
+    <div class="txt">
+      <div class="eyebrow">Outubro de 2017 · 1º objeto interestelar detectado</div>
+      <h2 class="big">ʻOumuamua</h2>
+      <p class="lead" data-step="1" style="font-size:38px">Em havaiano: <b>“o mensageiro de longe que chega primeiro”</b>.</p>
+      <div class="news" data-step="2">Dezembro de 2017 · o New York Times revela o programa secreto do Pentágono para investigar óvnis.</div>
+    </div>
+    <div class="credit">Ilustração: ESA/Hubble, NASA, ESO, M. Kornmesser · CC BY 4.0</div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide" id="s-map" data-steps="4" data-stars="0.35">
+    <div class="photo shade-r" data-alt="3I/ATLAS visto pelo Hubble"><img data-src="https://upload.wikimedia.org/wikipedia/commons/5/59/3I-ATLAS_Hubble_heic2509b.jpg" alt="O objeto 3I/ATLAS fotografado pelo telescópio Hubble"></div>
+    <svg id="skymap" viewBox="0 0 880 600" aria-label="Esquema das direções do Sinal Wow! e do 3I/ATLAS no céu">
+      <g id="skygrid"></g>
+      <text x="16" y="30" class="t-big">3I/ATLAS · julho de 2025</text>
+      <text x="16" y="58">região de Sagitário · esquema</text>
+      <g data-step="1">
+        <circle class="wowmk pulse" cx="330" cy="330" r="22"></circle>
+        <circle cx="330" cy="330" r="6" fill="var(--alarm)"></circle>
+        <text x="300" y="390" class="t-big" style="fill:var(--alarm)">Sinal Wow! · 1977</text>
+      </g>
+      <g data-step="2">
+        <line class="atl" x1="640" y1="230" x2="840" y2="140"></line>
+        <polygon points="840,140 818,138 828,158" fill="var(--radio)"></polygon>
+        <circle cx="640" cy="230" r="8" fill="var(--radio)"></circle>
+        <text x="500" y="290" class="t-big" style="fill:var(--radio)">de onde veio o 3I/ATLAS</text>
+      </g>
+      <g data-step="3">
+        <path class="arc" d="M352 322 Q 490 220 628 234"></path>
+        <text x="460" y="240" class="t-big" style="font-size:40px;fill:var(--ink)">9°</text>
+      </g>
+    </svg>
+    <div class="stats">
+      <div class="pct" data-step="3">0,6%<small>chance de duas direções aleatórias se alinharem assim (cálculo de Avi Loeb, Harvard)</small></div>
+      <div class="skeptic" data-step="4">A maioria dos cientistas acha que é só um cometa. Provavelmente estão certos.</div>
+    </div>
+    <div class="credit">Foto: NASA, ESA, D. Jewitt (UCLA); J. DePasquale · CC BY 4.0</div>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide" id="s-report" data-steps="1" data-stars="0.5">
+    <svg id="orbits" viewBox="0 0 1600 900" aria-label="Trajetória do 3I/ATLAS pelo Sistema Solar">
+      <g id="orbg"></g>
+      <path class="path" id="atpath" d=""></path>
+      <circle id="atdot" r="7" fill="var(--radio)"></circle>
+      <circle id="attrail" r="18" fill="none" stroke="var(--radio)" stroke-width="1.5" opacity=".4"></circle>
+    </svg>
+    <div class="eyebrow">Outubro de 2025: passa pelo Sol · e vai embora</div>
+    <div class="q" data-step="1"><h2 class="big">E se ele já mandou o <span class="alarm">relatório</span>?</h2></div>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide" id="s-bottle" data-steps="1" data-stars="0.15">
+    <div class="wrap">
+      <svg id="bottle" viewBox="0 0 360 720" aria-label="Garrafa de água super-resfriada congelando">
+        <defs>
+          <clipPath id="bclip"><path d="M150 40 h60 v80 c0 40 90 70 90 150 v380 c0 25 -20 40 -40 40 h-160 c-20 0 -40 -15 -40 -40 v-380 c0 -80 90 -110 90 -150 z"></path></clipPath>
+          <pattern id="frost" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+            <rect width="40" height="40" fill="rgba(235,245,255,.82)"></rect>
+            <path d="M0 20 H40 M20 0 V40 M0 0 L40 40" stroke="rgba(150,190,220,.7)" stroke-width="1.2"></path>
+          </pattern>
+        </defs>
+        <g clip-path="url(#bclip)">
+          <rect x="0" y="200" width="360" height="520" fill="rgba(110,170,220,.35)"></rect>
+          <rect class="ice" x="0" y="200" width="360" height="520" fill="url(#frost)"></rect>
+        </g>
+        <path class="glass" d="M150 40 h60 v80 c0 40 90 70 90 150 v380 c0 25 -20 40 -40 40 h-160 c-20 0 -40 -15 -40 -40 v-380 c0 -80 90 -110 90 -150 z"></path>
+        <rect x="140" y="12" width="80" height="34" rx="6" fill="var(--faint)"></rect>
+      </svg>
+      <div class="txt">
+        <div class="therm">−8 °C · e ainda líquida</div>
+        <h2 class="big">Um toque.</h2>
+        <p class="lead" data-step="1" style="font-size:38px">Em segundos, <b>congela inteira</b>. Ela parecia estável. Só estava esperando um empurrão.</p>
+      </div>
+    </div>
+    <div class="tap"></div>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide" id="s-vacuum" data-steps="2" data-stars="1">
+    <div class="top">
+      <div class="eyebrow">CERN · 2012 · bóson de Higgs</div>
+      <p class="lead">Os cálculos sugerem que o universo pode estar como aquela água: <b>estável só por enquanto</b>.</p>
+    </div>
+    <div class="bot">
+      <h2 class="big" data-step="1">Decaimento do falso vácuo</h2>
+      <p class="lead" data-step="2" style="font-size:40px">Viaja na <b>velocidade da luz</b>. Ninguém vê chegando.</p>
+    </div>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide" id="s-timeline" data-steps="4" data-stars="0.4">
+    <div class="wrap">
+      <div class="eyebrow">Ligando os pontos</div>
+      <div class="tl">
+        <div class="n"><div class="y">1945</div><div class="dot"></div><div class="l">A gente acendeu a luz</div></div>
+        <div class="n" data-step="1"><div class="y">1974</div><div class="dot"></div><div class="l">Gritou o nosso endereço</div></div>
+        <div class="n" data-step="2"><div class="y">1977</div><div class="dot"></div><div class="l">Alguém gritou de volta por 72 segundos. E sumiu</div></div>
+        <div class="n" data-step="3"><div class="y">2017</div><div class="dot"></div><div class="l">Chegou o primeiro mensageiro</div></div>
+        <div class="n" data-step="4"><div class="y">2025</div><div class="dot"></div><div class="l">Um batedor veio da direção daquele grito. E foi embora</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 19 -->
+  <section class="slide" id="s-empty" data-steps="1" data-stars="0.8">
+    <div class="line" data-step="1"><p class="lead">O perigo não é o barulho. <b>É a resposta que não faz barulho nenhum.</b></p></div>
+  </section>
+
+  <!-- 20 -->
+  <section class="slide" id="s-final" data-steps="0" data-stars="0">
+    <div class="wrap"><h2 class="big">NÃO RESPONDAM</h2></div>
+  </section>
+
+</div>
+
+<div id="hud"><i id="prog"></i></div>
+<div id="num"></div>
+<div id="black"></div>
+<div id="help"><b>→ / Page Down / espaço</b> avança · <b>← / Page Up</b> volta · <b>F</b> tela cheia · <b>B</b> tela preta · <b>H</b> esconde o contador</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const stage=$('#stage');
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0, step=0;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- escala do palco ---------- */
+function fit(){const k=Math.min(innerWidth/1600,innerHeight/900);stage.style.transform=`translate(-50%,-50%) scale(${k})`;}
+addEventListener('resize',()=>{fit();sizeCanvas();drawForest();});
+
+/* ---------- imagens: carrega antecipado, com reserva se falhar ---------- */
+document.querySelectorAll('.photo img[data-src]').forEach(img=>{
+  img.addEventListener('error',()=>img.parentElement.classList.add('missing'));
+  img.src=img.dataset.src;
+});
+
+/* ---------- céu estrelado global ---------- */
+const sky=$('#sky'), sx=sky.getContext('2d');
+const fx=$('#fx'), fctx=fx.getContext('2d');
+let W=0,H=0,DPR=1, stars=[], bright=0.5, brightTarget=0.5;
+function sizeCanvas(){
+  DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+  for(const c of [sky,fx]){c.width=W*DPR;c.height=H*DPR;}
+  sx.setTransform(DPR,0,0,DPR,0,0);fctx.setTransform(DPR,0,0,DPR,0,0);
+  const n=Math.round(W*H/2600);
+  stars=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()**3*1.6+0.3,p:Math.random()*6.28,s:0.4+Math.random()*1.6,z:Math.random()}));
+}
+let t0=performance.now();
+function frame(now){
+  const t=(now-t0)/1000;
+  bright+=(brightTarget-bright)*0.03;
+  sx.fillStyle='#04060b';sx.fillRect(0,0,W,H);
+  if(bright>0.01){
+    for(const st of stars){
+      const tw=reduce?1:0.65+0.35*Math.sin(t*st.s+st.p);
+      const x=(st.x+(reduce?0:t*2*st.z))%W;
+      sx.globalAlpha=Math.min(1,bright*tw*(0.35+st.z*0.65));
+      sx.fillStyle=st.z>0.93?'#ffd9c2':(st.z<0.08?'#c9dcff':'#f2efe6');
+      sx.beginPath();sx.arc(x,st.y,st.r,0,6.283);sx.fill();
+    }
+    sx.globalAlpha=1;
+  }
+  hooks.tick && hooks.tick(t);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- floresta ---------- */
+const fc=$('#forest');
+function drawForest(){
+  const c=fc.getContext('2d');fc.width=1600;fc.height=900;
+  const g=c.createLinearGradient(0,0,0,900);g.addColorStop(0,'rgba(4,6,11,0)');g.addColorStop(1,'rgba(10,14,20,1)');
+  c.fillStyle=g;c.fillRect(0,0,1600,900);
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const layers=[{y:640,h:[180,300],col:'#10151d',n:34},{y:720,h:[240,420],col:'#0a0e14',n:22},{y:820,h:[340,560],col:'#05070b',n:14}];
+  for(const L of layers){
+    c.fillStyle=L.col;c.fillRect(0,L.y,1600,900-L.y);
+    for(let i=0;i<L.n;i++){
+      const x=(i/L.n)*1700-60+rnd()*50, h=L.h[0]+rnd()*(L.h[1]-L.h[0]), w=h*0.32, base=L.y+rnd()*30;
+      c.beginPath();
+      const tiers=6;
+      for(let k=0;k<tiers;k++){
+        const ty=base-h+(k/tiers)*h*0.95, tw=w*(0.25+0.75*(k+1)/tiers);
+        c.moveTo(x,ty-h*0.08);c.lineTo(x-tw/2,ty+h*0.16);c.lineTo(x+tw/2,ty+h*0.16);c.closePath();
+      }
+      c.fill();c.fillRect(x-w*0.04,base-h*0.1,w*0.08,h*0.12+40);
+    }
+  }
+}
+
+/* ---------- contagem de estrelas ---------- */
+function countUp(el,to,ms){
+  const fmt=n=>Math.round(n).toLocaleString('pt-BR');
+  if(reduce){el.textContent=fmt(to);return;}
+  const s=performance.now();
+  (function go(n){const p=Math.min(1,(n-s)/ms);el.textContent=fmt(to*(1-Math.pow(1-p,4)));if(p<1&&slides[cur].id==='s-paradox')requestAnimationFrame(go);})(s);
+}
+
+/* ---------- mapa do Novo México ---------- */
+(function nm(){
+  const B={x0:-109.3,x1:-102.7,y0:31.1,y1:37.25}, w=620,h=470;
+  const P=(lon,lat)=>[ (lon-B.x0)/(B.x1-B.x0)*w, h-(lat-B.y0)/(B.y1-B.y0)*h ];
+  const poly=[[-109.05,37],[-103,37],[-103.06,32],[-106.62,32],[-106.53,31.78],[-108.21,31.78],[-108.21,31.33],[-109.05,31.33]];
+  $('#nmpoly').setAttribute('points',poly.map(p=>P(...p).map(v=>v.toFixed(1)).join(',')).join(' '));
+  const tr=P(-106.475,33.677), ro=P(-104.523,33.394);
+  $('#nmroute').setAttribute('d',`M${tr[0]} ${tr[1]} Q ${(tr[0]+ro[0])/2} ${tr[1]-70} ${ro[0]} ${ro[1]}`);
+  $('#nmpts').innerHTML=
+    `<circle cx="${tr[0]}" cy="${tr[1]}" r="9" fill="var(--alarm)"/><text x="${tr[0]-120}" y="${tr[1]+40}">Trinity · 1945</text>`+
+    `<circle cx="${ro[0]}" cy="${ro[1]}" r="9" fill="var(--ink)"/><text x="${ro[0]-60}" y="${ro[1]+40}">Roswell · 1947</text>`+
+    `<text class="small" x="${(tr[0]+ro[0])/2-50}" y="${tr[1]-55}">~190 km</text>`+
+    `<text class="small" x="14" y="28">NOVO MÉXICO</text>`;
+})();
+
+/* ---------- folha do Wow! ---------- */
+const WOW=[['6',6],['E',14],['Q',26],['U',30],['J',19],['5',5]];
+const ROWS=16, COLS=11, HITCOL=4, HITROW=5;
+(function buildGrid(){
+  let seed=42;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const pick=()=>{const r=rnd();return r<.42?' ':r<.78?'1':r<.93?'2':r<.985?'3':'4';};
+  let html='';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const k=r-HITROW;
+      if(c===HITCOL&&k>=0&&k<WOW.length) html+=`<span class="hit" id="h${k}">${WOW[k][0]}</span>`;
+      else if(Math.abs(c-HITCOL)===1&&k>=-1&&k<=WOW.length) html+=' ';
+      else html+=pick();
+    }
+    html+='\n';
+  }
+  $('#grid').innerHTML=html;
+  $('#bars').innerHTML=WOW.map(([c,v],i)=>`<div class="bar" id="b${i}"><span class="val">${v}×</span><div class="fill"></div><span class="lbl">${c}</span></div>`).join('');
+})();
+function placeRing(){
+  const a=$('#h0'), b=$('#h5'), paper=$('#s-wow .paper');
+  if(!a||!b)return;
+  const ox=parseFloat(getComputedStyle($('#grid')).left), oy=parseFloat(getComputedStyle($('#grid')).top);
+  const x=ox+a.offsetLeft+a.offsetWidth*0.36, y1=oy+a.offsetTop-6, y2=oy+b.offsetTop+b.offsetHeight+6;
+  const rx=40, cy=(y1+y2)/2, ry=(y2-y1)/2+14;
+  $('#ringpath').setAttribute('d',`M ${x+rx-4} ${cy-ry*0.85} C ${x+rx+16} ${cy-ry*0.2}, ${x+rx+10} ${cy+ry}, ${x} ${cy+ry} C ${x-rx-14} ${cy+ry}, ${x-rx-12} ${cy-ry}, ${x+4} ${cy-ry} C ${x+20} ${cy-ry}, ${x+rx+4} ${cy-ry*0.9}, ${x+rx+12} ${cy-ry*0.55}`);
+  const ww=$('#wowword');ww.style.left=(x+rx+30)+'px';ww.style.top=(cy-ry*0.95)+'px';
+}
+
+/* ---------- mapa do céu ---------- */
+(function skyGrid(){
+  let s='';
+  for(let i=0;i<=8;i++){s+=`<line class="gridl" x1="${40+i*100}" y1="80" x2="${40+i*100}" y2="560"/>`;}
+  for(let j=0;j<=4;j++){s+=`<line class="gridl" x1="40" y1="${80+j*120}" x2="840" y2="${80+j*120}"/>`;}
+  let seed=3;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let k=0;k<70;k++){s+=`<circle cx="${50+rnd()*780}" cy="${90+rnd()*460}" r="${(rnd()**2*2.2+0.6).toFixed(2)}" fill="#cfd3dc" opacity="${(0.25+rnd()*0.6).toFixed(2)}"/>`;}
+  $('#skygrid').innerHTML=s;
+})();
+
+/* ---------- órbitas e trajetória ---------- */
+const AU=150, CX=1080, CY=430;
+let atPts=[];
+(function orbits(){
+  const g=$('#orbg');
+  let s=`<circle cx="${CX}" cy="${CY}" r="16" fill="#ffcf6b"/><circle cx="${CX}" cy="${CY}" r="34" fill="#ffcf6b" opacity=".12"/>`;
+  [['Mercúrio',.39],['Vênus',.72],['Terra',1],['Marte',1.52]].forEach(([n,a])=>{s+=`<circle class="orb" cx="${CX}" cy="${CY}" r="${a*AU}"/>`;if(n!=='Mercúrio')s+=`<text x="${CX+a*AU*0.71+8}" y="${CY-a*AU*0.71-6}">${n}</text>`;});
+  g.innerHTML=s;
+  const q=1.36,e=6.14,p=q*(1+e),rot=-2.25;
+  const pts=[];
+  for(let th=-96;th<=96;th+=0.5){
+    const r=p/(1+e*Math.cos(th*Math.PI/180));
+    if(r<0||r>14)continue;
+    const a=th*Math.PI/180+rot;
+    pts.push([CX+r*AU*Math.cos(a),CY+r*AU*Math.sin(a)]);
+  }
+  atPts=pts;
+  $('#atpath').setAttribute('d','M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L'));
+  const peri=[CX+q*AU*Math.cos(rot),CY+q*AU*Math.sin(rot)];
+  g.innerHTML+=`<text x="${peri[0]+16}" y="${peri[1]+30}">periélio · out/2025</text>`;
+})();
+let reportStart=0;
+
+/* ---------- bolha do falso vácuo ---------- */
+let bubbleStart=0;
+function drawBubble(t){
+  fctx.clearRect(0,0,W,H);
+  if(slides[cur].id!=='s-vacuum'||step<1||!bubbleStart)return;
+  const el=(performance.now()-bubbleStart)/1000;
+  const k=Math.min(innerWidth/1600,innerHeight/900);
+  const cx=W/2+600*k, cy=H/2-140*k;
+  const R=Math.max(0,(reduce?40:(el**1.6)*120))*k;
+  const maxR=Math.hypot(W,H);
+  const r=Math.min(R,maxR*1.1);
+  fctx.save();
+  fctx.beginPath();fctx.arc(cx,cy,r,0,6.283);
+  fctx.fillStyle='#000';fctx.fill();
+  const g=fctx.createRadialGradient(cx,cy,Math.max(0,r-18*k),cx,cy,r+26*k);
+  g.addColorStop(0,'rgba(143,211,255,0)');g.addColorStop(.55,'rgba(230,245,255,.95)');g.addColorStop(1,'rgba(143,211,255,0)');
+  fctx.fillStyle=g;fctx.beginPath();fctx.arc(cx,cy,r+26*k,0,6.283);fctx.arc(cx,cy,Math.max(0,r-18*k),0,6.283,true);fctx.fill();
+  fctx.restore();
+}
+
+/* ---------- ganchos por slide ---------- */
+const hooks={
+  tick(t){
+    drawBubble(t);
+    if(slides[cur].id==='s-report'&&atPts.length){
+      const el=(performance.now()-reportStart)/1000, dur=11;
+      const p=reduce?0.85:Math.min(1,(el%(dur+2))/dur);
+      const i=Math.min(atPts.length-1,Math.floor(p*(atPts.length-1)));
+      const [x,y]=atPts[i];
+      $('#atdot').setAttribute('cx',x);$('#atdot').setAttribute('cy',y);
+      $('#attrail').setAttribute('cx',x);$('#attrail').setAttribute('cy',y);
+    }
+  }
+};
+function onEnter(s){
+  if(s.id==='s-paradox')countUp($('#count'),200000000000,3200);
+  if(s.id==='s-report')reportStart=performance.now();
+  if(s.id==='s-wow')requestAnimationFrame(placeRing);
+  if(s.id==='s-forest'||s.id==='s-title'){/* nada */}
+}
+function onStep(s,n,forward){
+  if(s.id==='s-forest'&&n===1&&forward){stage.classList.remove('shake');void stage.offsetWidth;stage.classList.add('shake');}
+  if(s.id==='s-wow'){
+    WOW.forEach((w,i)=>{
+      const on=n>=i+1, h=$('#h'+i), b=$('#b'+i);
+      if(on&&!h.classList.contains('on')&&forward){h.classList.add('flash');setTimeout(()=>h.classList.remove('flash'),1000);}
+      h.classList.toggle('on',on);b.classList.toggle('on',on);
+      b.querySelector('.fill').style.height=on?(w[1]/30*86)+'%':'0';
+    });
+    $('#ring').classList.toggle('on',n>=7);
+  }
+  if(s.id==='s-bottle')s.classList.toggle('frozen',n>=1);
+  if(s.id==='s-vacuum'){if(n>=1&&!bubbleStart)bubbleStart=performance.now(); if(n<1)bubbleStart=0;}
+}
+
+/* ---------- navegação ---------- */
+function maxStep(s){return +s.dataset.steps||0;}
+function render(forward){
+  slides.forEach((s,i)=>s.classList.toggle('active',i===cur));
+  const s=slides[cur];
+  s.querySelectorAll('[data-step]').forEach(el=>el.classList.toggle('on',+el.dataset.step<=step));
+  brightTarget=parseFloat(s.dataset.stars||0.5);
+  onStep(s,step,forward);
+  $('#prog').style.width=((cur+1)/slides.length*100)+'%';
+  $('#num').textContent=String(cur+1).padStart(2,'0')+' / '+slides.length;
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function go(i,st,forward){
+  if(i<0||i>=slides.length)return;
+  const changed=i!==cur; cur=i; step=st;
+  if(changed&&slides[cur].id!=='s-vacuum')bubbleStart=0;
+  render(forward);
+  if(changed)onEnter(slides[cur]);
+}
+function next(){const s=slides[cur];if(step<maxStep(s)){step++;render(true);}else go(cur+1,0,true);}
+function prev(){if(step>0){step--;render(false);}else if(cur>0)go(cur-1,maxStep(slides[cur-1]),false);}
+
+function dismissHelp(){$('#help').classList.add('gone');}
+function toggleFull(){
+  try{ if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen(); }catch(e){}
+}
+addEventListener('keydown',e=>{
+  const k=e.key;
+  if(['ArrowRight','ArrowDown','PageDown',' ','Enter','n','N'].includes(k)){e.preventDefault();dismissHelp();if(document.body.classList.contains('blackout')){document.body.classList.remove('blackout');return;}next();}
+  else if(['ArrowLeft','ArrowUp','PageUp','Backspace','p','P'].includes(k)){e.preventDefault();dismissHelp();prev();}
+  else if(k==='Home'){e.preventDefault();go(0,0,false);}
+  else if(k==='End'){e.preventDefault();go(slides.length-1,0,true);}
+  else if(k==='b'||k==='B'||k==='.'||k===','){e.preventDefault();document.body.classList.toggle('blackout');}
+  else if(k==='f'||k==='F'||k==='F5'){e.preventDefault();dismissHelp();toggleFull();}
+  else if(k==='h'||k==='H'){document.body.classList.toggle('nohud');}
+  else if(k==='Escape'){document.body.classList.remove('blackout');}
+});
+addEventListener('click',e=>{dismissHelp();if(e.clientX<innerWidth*0.25)prev();else next();});
+addEventListener('contextmenu',e=>{e.preventDefault();prev();});
+let mt;addEventListener('mousemove',()=>{document.body.classList.add('cursor');clearTimeout(mt);mt=setTimeout(()=>document.body.classList.remove('cursor'),1800);});
+
+/* ---------- início ---------- */
+fit();sizeCanvas();drawForest();
+if(document.fonts)document.fonts.ready.then(placeRing);
+const start=Math.max(0,Math.min(slides.length-1,(parseInt(location.hash.slice(1))||1)-1));
+cur=start;step=0;render(true);onEnter(slides[cur]);
+requestAnimationFrame(frame);
+setTimeout(dismissHelp,9000);
+})();
+</script>
+</body>
+</html>
