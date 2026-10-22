@@ -381,7 +381,8 @@ const SYS=[
  {id:19,n:'Elevadores',c:'#334155'},{id:20,n:'Instalações elétricas',c:'#ca8a04'},{id:21,n:'Impermeabilização',c:'#0f766e'},
  {id:22,n:'Pintura externa',c:'#c026d3'},{id:23,n:'Revestimentos cerâmicos',c:'#a16207'},{id:24,n:'Circuito fechado de TV',c:'#475569'}
 ];
-const sysOf=id=>SYS.find(s=>s.id===id);
+const GERAL={id:0,n:'Geral (sem sistema)',c:'#64748b'};
+const sysOf=id=>SYS.find(s=>s.id===id)||GERAL;
 const REFS=['CBIC','NBR 5674','NBR 15575','NBR 10818','NBR 10339','SECOVI','INMETRO','Ministério da Saúde','Orientação do fabricante','Orientação da construtora','Fornecedor'];
 const RESPS=['Equipe de manutenção local','Empresa capacitada','Empresa certificada','Empresa especializada','Jardineiro qualificado'];
 const PERIODS=[['1','dias','(verão)'],['2','dias','(inverno)'],['1','semanas',''],['2','semanas',''],['6','semanas','ou quando a altura atingir 5 cm'],['1','meses',''],['2','meses',''],['3','meses',''],['4','meses',''],['6','meses',''],['1','anos',''],['2','anos',''],['3','anos',''],['5','anos','']];
@@ -477,6 +478,12 @@ const ADMS=[
 ];
 const AD_MAP=['a1','a1','a1','a2','a3','a4','a5','a4','a5','a6','a6','a6','a2','a1','a7','a7','a8','a5','a6','a5',null];
 BUILD.forEach((b,i)=>b.ad=AD_MAP[i]);
+const CANAL={url:'sac.horizonte.com.br',tel:'(49) 3000-1234',mail:'sac@horizonte.com.br'};
+BUILD.find(b=>b.id==='b3').chOff=true;
+const RN={sind:'Administradora',zel:'Zelador / equipe',constr:'Construtora',admin:'Plataforma'};
+const orgOf=(r,b)=>r==='sind'?aOf(b.ad).n:r==='constr'?cOf(b.c).n:r==='zel'?'Equipe de manutenção do edifício':'Predial Mob';
+const chVisible=c=>!bOf(c.b).chOff&&(state.role==='admin'||((c.from===state.role||c.to===state.role)&&myBIds().includes(c.b)));
+const dirTxt=c=>`${RN[c.from]} → ${RN[c.to]}`;
 const aOf=id=>ADMS.find(a=>a.id===id)||{n:'Sem administradora',t:''};
 const bOf=id=>BUILD.find(b=>b.id===id)||BUILD[0];
 const cOf=id=>CONSTR.find(c=>c.id===id);
@@ -484,13 +491,17 @@ const HUES=[['#6d5ef7','#9f7aea'],['#0ea5e9','#6366f1'],['#10b981','#0ea5e9'],['
 const grad=i=>`linear-gradient(135deg,${HUES[i%HUES.length][0]},${HUES[i%HUES.length][1]})`;
 
 const CH=[
- {id:1042,t:'Infiltração no teto da garagem G2',s:21,b:'b1',loc:'Área comum · Garagem G2',st:'atendimento',cr:'02/10/2026',by:'Carla Mendes',resp:'Marcos Teixeira',cost:1850,prio:'Alta',ph:3,d:'Após as chuvas da última semana surgiram manchas e gotejamento no teto da garagem G2, próximo às vagas 14 a 18.'},
- {id:1041,t:'Portão da garagem travando',s:7,b:'b1',loc:'Área comum · Portão principal',st:'agendado',cr:'29/09/2026',by:'João Pereira',resp:'Marcos Teixeira',cost:0,prio:'Normal',ph:1,d:'O portão para no meio do curso em alguns acionamentos.'},
- {id:1039,t:'Fissura na fachada do bloco B',s:22,b:'b3',loc:'Fachada · Bloco B',st:'analise',cr:'25/09/2026',by:'Sônia Ramos',resp:'—',cost:0,prio:'Alta',ph:2,d:'Fissura diagonal visível a partir do 4º pavimento.'},
- {id:1037,t:'Piso cerâmico solto no hall',s:23,b:'b5',loc:'Hall de entrada',st:'aberto',cr:'22/09/2026',by:'Juliana Prado',resp:'—',cost:0,prio:'Normal',ph:2,d:'Três peças soltas próximas à porta de entrada.'},
- {id:1035,t:'Bomba de recalque com ruído',s:1,b:'b2',loc:'Casa de bombas',st:'concluido',cr:'10/09/2026',by:'Paulo Henrique',resp:'Marcos Teixeira',cost:640,prio:'Normal',ph:2,d:'Ruído metálico na bomba 2 durante o funcionamento.'},
- {id:1033,t:'Luminárias de emergência sem acender',s:15,b:'b3',loc:'Escadaria · 3º ao 6º andar',st:'concluido',cr:'02/09/2026',by:'Sônia Ramos',resp:'Marcos Teixeira',cost:390,prio:'Alta',ph:1,d:'No teste mensal, 4 luminárias não acenderam.'},
- {id:1031,t:'Vazamento no ralo da piscina',s:14,b:'b1',loc:'Área de lazer · Piscina',st:'concluido',cr:'20/08/2026',by:'Carla Mendes',resp:'Marcos Teixeira',cost:520,prio:'Normal',ph:3,d:'Perda de nível acima do normal identificada pelo zelador.'}
+ {id:1046,t:'Repor produtos de limpeza da piscina',s:14,b:'b2',loc:'Área de lazer · Piscina',st:'aberto',cr:'14/10/2026',by:'João Pereira',from:'zel',to:'sind',resp:'—',cost:0,prio:'Normal',ph:1,d:'O estoque de cloro e clarificante acaba esta semana. Preciso da reposição até sexta.'},
+ {id:1045,t:'Agendar vistoria de garantia da fachada',s:22,b:'b1',loc:'Fachada · Bloco A',st:'analise',cr:'12/10/2026',by:'Marcos Teixeira',from:'constr',to:'sind',resp:'Carla Mendes',cost:0,prio:'Normal',ph:0,d:'Precisamos de acesso à cobertura e aos apartamentos de final 01 para a vistoria anual de garantia da fachada.'},
+ {id:1044,t:'Trocar lâmpadas queimadas da garagem G1',s:20,b:'b1',loc:'Garagem G1',st:'agendado',cr:'11/10/2026',by:'Carla Mendes',from:'sind',to:'zel',resp:'João Pereira',cost:0,prio:'Normal',ph:1,d:'Seis lâmpadas queimadas próximas às vagas 30 a 40.'},
+ {id:1043,t:'Acompanhar técnico do elevador na quinta',s:19,b:'b1',loc:'Casa de máquinas',st:'aberto',cr:'13/10/2026',by:'Marcos Teixeira',from:'constr',to:'zel',resp:'—',cost:0,prio:'Normal',ph:0,d:'O técnico da conservadora chega às 9h e precisa de acompanhamento e acesso à casa de máquinas.'},
+ {id:1042,t:'Infiltração no teto da garagem G2',s:21,b:'b1',loc:'Área comum · Garagem G2',st:'atendimento',cr:'02/10/2026',by:'Carla Mendes',resp:'Marcos Teixeira',cost:1850,from:'sind',to:'constr',prio:'Alta',ph:3,d:'Após as chuvas da última semana surgiram manchas e gotejamento no teto da garagem G2, próximo às vagas 14 a 18.'},
+ {id:1041,t:'Portão da garagem travando',s:7,b:'b1',loc:'Área comum · Portão principal',st:'agendado',cr:'29/09/2026',by:'João Pereira',resp:'Marcos Teixeira',cost:0,from:'zel',to:'constr',prio:'Normal',ph:1,d:'O portão para no meio do curso em alguns acionamentos.'},
+ {id:1039,t:'Fissura na fachada do bloco B',s:22,b:'b4',loc:'Fachada · Bloco B',st:'analise',cr:'25/09/2026',by:'Sônia Ramos',resp:'—',cost:0,from:'sind',to:'constr',prio:'Alta',ph:2,d:'Fissura diagonal visível a partir do 4º pavimento.'},
+ {id:1037,t:'Piso cerâmico solto no hall',s:23,b:'b5',loc:'Hall de entrada',st:'aberto',cr:'22/09/2026',by:'Juliana Prado',resp:'—',cost:0,from:'sind',to:'constr',prio:'Normal',ph:2,d:'Três peças soltas próximas à porta de entrada.'},
+ {id:1035,t:'Bomba de recalque com ruído',s:1,b:'b2',loc:'Casa de bombas',st:'concluido',cr:'10/09/2026',by:'Paulo Henrique',resp:'Marcos Teixeira',cost:640,from:'sind',to:'constr',prio:'Normal',ph:2,d:'Ruído metálico na bomba 2 durante o funcionamento.'},
+ {id:1033,t:'Luminárias de emergência sem acender',s:15,b:'b3',loc:'Escadaria · 3º ao 6º andar',st:'concluido',cr:'02/09/2026',by:'Sônia Ramos',resp:'Marcos Teixeira',cost:390,from:'sind',to:'constr',prio:'Alta',ph:1,d:'No teste mensal, 4 luminárias não acenderam.'},
+ {id:1031,t:'Vazamento no ralo da piscina',s:14,b:'b1',loc:'Área de lazer · Piscina',st:'concluido',cr:'20/08/2026',by:'Carla Mendes',resp:'Marcos Teixeira',cost:520,from:'sind',to:'constr',prio:'Normal',ph:3,d:'Perda de nível acima do normal identificada pelo zelador.'}
 ];
 const CHST={aberto:['Aberto','bd-in'],analise:['Em análise','bd-br'],agendado:['Agendado','bd-wa'],atendimento:['Em atendimento','bd-wa'],concluido:['Concluído','bd-ok']};
 const CHORD=['aberto','analise','agendado','atendimento','concluido'];
@@ -589,10 +600,13 @@ function sysBars(list,limit=6){
  return g.map(([sid,it])=>{const s=sysOf(sid);return `<div class="li"><span class="sq" style="background:${s.c}"></span><div class="grow"><div class="row between"><span class="b ell">${s.n}</span><span class="b">${it.length}</span></div><div class="pb da" style="margin-top:7px"><i style="width:${it.length/max*100}%;background:${s.c}"></i></div></div></div>`}).join('')||`<div class="empty">Sem atrasos</div>`;
 }
 function chItem(c,showB=false){
- return `<div class="li fitem" data-go="ch" data-id="${c.id}" data-f="${c.st} ${c.st==='concluido'?'fechado':'aberto_all'}">
-  <div class="kpi-ic" style="background:${sysOf(c.s).c}1f;color:${sysOf(c.s).c}">${I('head',18)}</div>
-  <div class="grow"><div class="t ell">${c.t}</div><div class="s ell">#${c.id} · ${showB?bOf(c.b).n+' · ':''}${sysOf(c.s).n} · ${c.cr.slice(0,5)}</div></div>${chBadge(c.st)}</div>`;
+ const mine=c.to===state.role?'rec':c.from===state.role?'env':'';
+ return `<div class="li fitem" data-go="ch" data-id="${c.id}" data-f="${c.st} ${c.st==='concluido'?'fechado':'aberto_all'} ${mine}">
+  <div class="kpi-ic" style="background:${sysOf(c.s).c}1f;color:${sysOf(c.s).c}">${I(c.to===state.role?'bell':'send',17)}</div>
+  <div class="grow"><div class="t ell">${c.t}</div><div class="s ell">#${c.id} · ${showB?bOf(c.b).n+' · ':''}${sysOf(c.s).n} · ${c.cr.slice(0,5)}</div><div class="xs b" style="margin-top:3px;color:${c.to===state.role?'var(--brand)':'var(--mu)'}">${c.to===state.role?'Recebido · de '+RN[c.from]:c.from===state.role?'Enviado · para '+RN[c.to]:dirTxt(c)}</div></div>${chBadge(c.st)}</div>`;
 }
+function canalCard(b){const cn=b.canal||CANAL;
+ return `<div class="card mb" style="border-color:var(--brand-100)"><div class="card-b row" style="align-items:flex-start"><div class="kpi-ic">${I('head',18)}</div><div class="grow"><div class="b">${b.n}: assistência técnica pelo canal da construtora</div><div class="sm mu" style="margin-top:2px">${cOf(b.c).n} atende os chamados deste edifício por um sistema próprio. Use os contatos abaixo.</div><div class="row wrap mt" style="gap:8px"><span class="bd bd-br nodot">${I('eye',12)} ${cn.url}</span><span class="bd nodot">${I('phone',12)} ${cn.tel}</span><span class="bd nodot">${I('mail',12)} ${cn.mail}</span></div></div></div></div>`;}
 
 /* =========================================================
    VIEWS
@@ -629,7 +643,7 @@ function loginView(){
 V['s-home']=()=>{
  const st=stats(),atr=OCC.filter(o=>o.st==='atrasada'),nsys=bySys(atr).length;
  const pend=OCC.filter(o=>o.st==='pendente').slice(0,6);
- const ids=myBIds(),bs=ids.map(bOf),open=CH.filter(c=>ids.includes(c.b)&&c.st!=='concluido');
+ const ids=myBIds(),bs=ids.map(bOf),open=CH.filter(c=>chVisible(c)&&c.st!=='concluido');
  const tAtr=bs.reduce((a,b)=>a+b.atr,0),tPend=bs.reduce((a,b)=>a+b.pend,0),avg=Math.round(bs.reduce((a,b)=>a+b.conf,0)/bs.length);
  return pageH('Olá, Carla','Habitat Administradora · '+bs.length+' edifícios · terça-feira, 13 de outubro',`<button class="btn d-only" data-go="s-rel">${I('file',18)}Gerar relatório</button><button class="btn btn-p d-only" data-act="newCh">${I('plus',18)}Abrir chamado</button>`)+
  (tAtr?`<div class="alert" data-go="s-man" data-t="atr">${I('alert')}<div class="grow">${tAtr} manutenções atrasadas em ${bs.filter(b=>b.atr).length} edifícios<div class="sm" style="font-weight:600;opacity:.85">Regularize para manter a conformidade dos prédios</div></div>${I('chevR')}</div>`:'')+
@@ -693,18 +707,22 @@ V.man=()=>{
 };
 
 function chamadosView(scope){
- const list=scope==='all'?CH:CH.filter(c=>myBIds().includes(c.b));
- const showB=true;
- const board=can.manageCh();
+ const list=CH.filter(chVisible);
+ const board=['constr','admin'].includes(state.role);
+ const hidden=state.role==='admin'?[]:myBIds().map(bOf).filter(b=>b.chOff);
+ const canOpen=state.role!=='admin'&&myBIds().some(id=>!bOf(id).chOff);
  const k=state.route,view=curTab(k,board?'board':'list');
- const head=pageH(state.role==='admin'?'Chamados':'Assistência técnica',scope==='mine'?(state.role==='zel'?'Seus edifícios · chamados abertos para a construtora':'Habitat Administradora · chamados dos seus edifícios'):scope==='constr'?'Construtora Horizonte · todos os edifícios':'Todos os edifícios da plataforma',
-   (board?`<div class="seg" style="width:200px"><button class="${view==='board'?'on':''}" data-tab="board" data-tabg="${k}">Quadro</button><button class="${view==='list'?'on':''}" data-tab="list" data-tabg="${k}">Lista</button></div>`:'')+(state.role!=='admin'?`<button class="btn btn-p" data-act="newCh">${I('plus',18)}Novo chamado</button>`:''));
+ const sub=state.role==='admin'?'Todos os edifícios da plataforma':'Recebidos e enviados · '+(state.role==='constr'?'Construtora Horizonte':state.role==='zel'?'seus edifícios':'Habitat Administradora');
+ const head=pageH(state.role==='admin'?'Chamados':'Chamados',sub,
+   (board?`<div class="seg" style="width:200px"><button class="${view==='board'?'on':''}" data-tab="board" data-tabg="${k}">Quadro</button><button class="${view==='list'?'on':''}" data-tab="list" data-tabg="${k}">Lista</button></div>`:'')+(canOpen?`<button class="btn btn-p" data-act="newCh">${I('plus',18)}Novo chamado</button>`:''));
+ const hid=hidden.length?(state.role==='constr'?`<div class="alert br" style="cursor:default">${I('eye')}<div class="grow sm">Chamados ocultos em <b>${hidden.map(b=>b.n).join(', ')}</b>: os usuários desses edifícios veem o canal próprio da construtora.</div><button class="btn btn-sm" data-go="ed" data-id="${hidden[0].id}" data-t="ch">Gerenciar</button></div>`:hidden.map(canalCard).join('')):'';
  if(board&&view==='board'){
-  return head+`<div class="board">${CHORD.map(st=>{const it=list.filter(c=>c.st===st);return `<div class="bcol"><div class="bcol-h">${chBadge(st)}<span class="mu sm" style="margin-left:auto">${it.length}</span></div>${it.map(c=>`<div class="bc" data-go="ch" data-id="${c.id}"><div class="row between xs mu"><span>#${c.id}</span>${c.prio==='Alta'?'<span class="bd bd-da nodot">Alta</span>':''}</div><div class="b" style="margin:6px 0 8px">${c.t}</div><div class="sm mu">${bOf(c.b).n}</div><div class="row between" style="margin-top:10px">${sysTag(c.s)}${c.cost?`<span class="sm b" style="white-space:nowrap">${brl(c.cost)}</span>`:''}</div></div>`).join('')||'<div class="sm mu" style="padding:8px">Nenhum</div>'}</div>`}).join('')}</div>`;
+  return head+hid+`<div class="board">${CHORD.map(st=>{const it=list.filter(c=>c.st===st);return `<div class="bcol"><div class="bcol-h">${chBadge(st)}<span class="mu sm" style="margin-left:auto">${it.length}</span></div>${it.map(c=>`<div class="bc" data-go="ch" data-id="${c.id}"><div class="row between xs mu"><span>#${c.id}</span>${c.prio==='Alta'?'<span class="bd bd-da nodot">Alta</span>':''}</div><div class="b" style="margin:6px 0 6px">${c.t}</div><div class="sm mu">${bOf(c.b).n}</div><div class="xs b" style="margin-top:4px;color:${c.to===state.role?'var(--brand)':'var(--mu)'}">${dirTxt(c)}</div><div class="row between" style="margin-top:10px">${sysTag(c.s)}${c.cost?`<span class="sm b" style="white-space:nowrap">${brl(c.cost)}</span>`:''}</div></div>`).join('')||'<div class="sm mu" style="padding:8px">Nenhum</div>'}</div>`}).join('')}</div>`;
  }
- return head+`<div data-fscope><div class="row wrap mb"><div class="chips">${[['all','Todos'],['aberto_all','Em aberto'],['aberto','Abertos'],['atendimento','Em atendimento'],['concluido','Concluídos']].map(([f,l],i)=>`<button class="chip ${i===0?'on':''}" data-act="chipf" data-f="${f}">${l}</button>`).join('')}</div></div>
- <div class="card">${list.map(c=>chItem(c,showB)).join('')}</div></div>
- ${!board?`<button class="btn btn-p fab" data-act="newCh">${I('plus',20)}Novo chamado</button>`:''}`;
+ const chips=state.role==='admin'?[['all','Todos'],['aberto_all','Em aberto'],['concluido','Concluídos']]:[['all','Todos'],['rec','Recebidos'],['env','Enviados'],['aberto_all','Em aberto'],['concluido','Concluídos']];
+ return head+hid+(list.length?`<div data-fscope><div class="row wrap mb"><div class="chips">${chips.map(([f,l],i)=>`<button class="chip ${i===0?'on':''}" data-act="chipf" data-f="${f}">${l}</button>`).join('')}</div></div>
+ <div class="card">${list.map(c=>chItem(c,true)).join('')}</div></div>`:(canOpen?card('','<div class="empty">Nenhum chamado por aqui.</div>'):''))+
+ (!board&&canOpen?`<button class="btn btn-p fab" data-act="newCh">${I('plus',20)}Novo chamado</button>`:'');
 }
 V['s-ch']=()=>chamadosView('mine');V['z-ch']=()=>chamadosView('mine');V['c-ch']=()=>chamadosView('constr');V['adm-ch']=()=>chamadosView('all');
 
@@ -714,13 +732,13 @@ V.ch=()=>{
  return `<div class="card"><div class="card-b">
   <div class="row between wrap" style="align-items:flex-start"><div class="hd"><div class="sm mu b">Chamado #${c.id} · aberto em ${c.cr}</div><h1 style="font-size:22px;font-weight:800;margin-top:4px">${c.t}</h1></div><div class="row">${c.prio==='Alta'?'<span class="bd bd-da nodot">Prioridade alta</span>':''}${chBadge(c.st)}</div></div>
   <div class="stp mt">${CHORD.map((s,i)=>`<div class="${i<=si?'on':''}"><i></i><span>${CHST[s][0]}</span></div>`).join('')}</div>
-  <div class="info i4 mt"><div><div class="k">Edifício</div><div class="v">${b.n}</div></div><div><div class="k">Sistema</div><div class="v">${sysTag(c.s)}</div></div><div><div class="k">Local</div><div class="v">${c.loc}</div></div><div><div class="k">${can.cost()?'Custo total':'Responsável'}</div><div class="v">${can.cost()?(c.cost?brl(c.cost):'—'):c.resp}</div></div></div>
-  ${can.manageCh()?`<div class="row wrap mt"><button class="btn btn-p" data-act="chStatus">${I('refresh',18)}Alterar situação</button><button class="btn" data-act="chAssign">${I('user',18)}Atribuir responsável</button><button class="btn" data-act="chCost">${I('money',18)}Registrar custo</button></div>`:''}
+  <div class="info i4 mt"><div><div class="k">Edifício</div><div class="v">${b.n}</div><div class="xs mu">${c.loc}</div></div><div><div class="k">Sistema</div><div class="v">${sysTag(c.s)}</div></div><div><div class="k">De → Para</div><div class="v">${RN[c.from]} → ${RN[c.to]}</div><div class="xs mu">${orgOf(c.to,b)}</div></div><div><div class="k">${can.cost()?'Custo total':'Responsável'}</div><div class="v">${can.cost()?(c.cost?brl(c.cost):'—'):c.resp}</div></div></div>
+  ${state.role==='admin'||c.to===state.role?`<div class="row wrap mt"><button class="btn btn-p" data-act="chStatus">${I('refresh',18)}Alterar situação</button><button class="btn" data-act="chAssign">${I('user',18)}Atribuir responsável</button><button class="btn" data-act="chCost">${I('money',18)}Registrar custo</button></div>`:''}
  </div></div>
  <div class="cols cols-12 mt">
   <div style="display:flex;flex-direction:column;gap:16px">
-   ${card('Descrição',`<div class="card-b"><p style="margin:0">${c.d}</p><div class="sm mu mt">Aberto por <b style="color:var(--tx)">${c.by}</b></div></div>`)}
-   ${card('Anexos',`<div class="card-b"><div class="phos">${Array.from({length:c.ph},(_,i)=>photo(i+c.id)).join('')}</div></div>`)}
+   ${card('Descrição',`<div class="card-b"><p style="margin:0">${c.d}</p><div class="sm mu mt">Aberto por <b style="color:var(--tx)">${c.by}</b> (${RN[c.from]}) para <b style="color:var(--tx)">${orgOf(c.to,b)}</b></div></div>`)}
+   ${card('Anexos',`<div class="card-b">${c.ph?`<div class="phos">${Array.from({length:c.ph},(_,i)=>photo(i+c.id)).join('')}</div>`:'<div class="sm mu">Sem anexos.</div>'}</div>`)}
   </div>
   ${card('Histórico de atendimento',`<div class="card-b"><div class="tl">${log.map((l,i)=>`<div class="tl-i ${i===log.length-1?'':'ok'}"><div class="b">${l[0]}</div><div class="sm mu">${l[1]}${i?'':' · '+l[2]}</div>${i&&l[2]?`<div style="margin-top:6px;background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:9px 11px" class="sm">${l[2]}${l[3]&&can.cost()?`<div class="b" style="margin-top:4px">Custo lançado: ${brl(l[3])}</div>`:''}</div>`:''}</div>`).join('')}</div>
    ${c.st!=='concluido'?`<div class="mt" style="border-top:1px solid var(--bd);padding-top:14px"><textarea class="in" placeholder="Adicionar anotação ao chamado..." style="min-height:70px"></textarea><div class="row between mt"><button class="btn btn-sm" data-act="toast" data-msg="Seletor de anexos (simulação)">${I('camera',16)}Anexar</button><button class="btn btn-p btn-sm" data-act="toast" data-msg="Anotação adicionada (simulação)">${I('send',16)}Enviar</button></div></div>`:''}</div>`)}
@@ -736,28 +754,66 @@ function histView(){
 V['s-hist']=histView;V['z-hist']=histView;
 
 function relView(){
- const k=state.route,t=curTab(k,'real');
- const types=[['prog','Programa de manutenção','Plano completo com periodicidade, referência e responsável','list'],['real','Manutenções realizadas','Execuções no período, com responsável e evidências','checkc'],['pend','Pendentes e atrasadas','O que está em aberto, por sistema e vencimento','alert'],['conf','Conformidade por sistema','Percentual executado no prazo, por sistema','trend'],['ch','Chamados de assistência','Chamados abertos e resolvidos, com custos','head']];
+ const k=state.route,t=curTab(k,'prev');
+ const org=state.role==='constr'?'Construtora Horizonte':'Habitat Administradora';
+ const types=[
+  ['prev','Manutenções previstas (dia / semana)','O que precisa ser feito hoje ou na semana, incluindo as atrasadas','cal'],
+  ['mensal','Relatório mensal automático','Emitido todo dia 1: realizadas e pendentes do mês anterior e o que vence no mês atual','mail'],
+  ['desp','Despesas dos chamados','Custos lançados nos chamados, por edifício, sistema e período','money'],
+  ['real','Manutenções realizadas','Execuções no período, com responsável e evidências','checkc'],
+  ['pend','Pendentes e atrasadas','O que está em aberto, por sistema e vencimento','alert'],
+  ['conf','Conformidade por sistema','Percentual executado no prazo, por sistema','trend'],
+  ['prog','Programa de manutenção','Plano completo com periodicidade, referência e responsável','list'],
+  ['ch','Chamados','Chamados abertos e resolvidos no período','head']];
  const cur=types.find(x=>x[0]===t);
- const rows=OCC.filter(o=>t==='pend'?['atrasada','pendente'].includes(o.st):o.st==='realizada').slice(0,7);
+ const bsel=['constr','sind'].includes(state.role)?fld('Edifício',sel(['Todos os edifícios (consolidado)',...myBIds().map(id=>bOf(id).n)])):'';
+ const btns=`<div class="row mt"><button class="btn btn-p grow" data-act="toast" data-msg="PDF gerado: ${cur[1]} (simulação)">${I('file',18)}Gerar PDF</button><button class="btn grow" data-act="toast" data-msg="Planilha Excel exportada (simulação)">${I('table',18)}Exportar Excel</button></div>`;
+ const kp=arr=>`<div style="display:grid;grid-template-columns:repeat(${arr.length},1fr);gap:8px;margin-top:12px">${arr.map(x=>`<div style="background:${x[2]||'#f4f3ff'};border-radius:8px;padding:8px"><div style="font-size:16px;font-weight:800">${x[1]}</div><div style="color:#6c6b86">${x[0]}</div></div>`).join('')}</div>`;
+ const stx=st=>({atrasada:'<b style="color:#dc2626">Atrasada</b>',pendente:'<b style="color:#c76d04">Aberta</b>',futura:'Programada',realizada:'<b style="color:#15a34a">Realizada</b>'})[st];
+ const tbl=(cols,rows)=>`<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+ const sec=t=>`<div style="font-weight:800;margin-top:16px;padding-bottom:4px;border-bottom:1px solid #e8e8ef">${t}</div>`;
+ let filters='',period='01/07/2026 a 13/10/2026',body='';
+ if(t==='prev'){
+  const per=curTab(k+'_per','dia');
+  filters=bsel+`<div class="fld"><label>Período</label><div class="seg"><button class="${per==='dia'?'on':''}" data-tab="dia" data-tabg="${k}_per">Hoje</button><button class="${per==='sem'?'on':''}" data-tab="sem" data-tabg="${k}_per">Esta semana</button></div></div>`+setRow('Incluir atrasadas','Manutenções vencidas e ainda não executadas',sw(true))+setRow('Incluir abertas','Pendentes com vencimento no período',sw(true))+fld('Agrupar por',sel(['Edifício','Sistema','Responsável']));
+  const atr=OCC.filter(o=>o.st==='atrasada'),ab=OCC.filter(o=>o.st==='pendente').slice(0,per==='dia'?5:14);
+  period=per==='dia'?'terça-feira, 13/10/2026':'semana de 12/10 a 18/10/2026';
+  body=kp([['Atrasadas',atr.length,'#fdecec'],['Abertas no período',ab.length,'#fdf2e1'],['Total a executar',atr.length+ab.length]])+
+   tbl(['Vencimento','Sistema','Atividade','Situação'],[...atr.slice(0,4),...ab.slice(0,5)].map(o=>`<tr><td>${fd(o.date)}</td><td>${sysOf(o.s).n}</td><td>${procOf(o.p).n}</td><td>${stx(o.st)}</td></tr>`))+
+   `<div style="color:#6c6b86;margin-top:8px">Lista de conferência para a equipe · com campo para visto e observação</div>`;
+ } else if(t==='desp'){
+  filters=bsel+`<div class="g2">${fld('De','<input class="in" type="date" value="2026-07-01">')}${fld('Até','<input class="in" type="date" value="2026-10-13">')}</div>`+fld('Situação dos chamados',sel(['Todos','Somente concluídos','Em andamento']))+fld('Agrupar por',sel(['Edifício','Sistema','Fornecedor / responsável','Mês']));
+  const ex=[[1042,'02/10','Material de impermeabilização',1110],[1042,'09/10','Mão de obra · aplicação de manta',740],[1035,'12/09','Troca de rolamento da bomba 2',640],[1031,'22/08','Reparo do ralo de fundo',520],[1041,'06/10','Visita técnica do portão',180]];
+  const tot=ex.reduce((a,x)=>a+x[3],0);
+  body=kp([['Total no período',brl(tot)],['Chamados com custo',new Set(ex.map(x=>x[0])).size],['Ticket médio',brl(Math.round(tot/new Set(ex.map(x=>x[0])).size))]])+
+   tbl(['Data','Chamado','Edifício','Descrição','Valor'],ex.map(x=>{const c=CH.find(y=>y.id===x[0]);return `<tr><td>${x[1]}</td><td>#${x[0]}</td><td>${bOf(c.b).n}</td><td>${x[2]}<div style="color:#9a99b5">${sysOf(c.s).n}</div></td><td style="text-align:right;white-space:nowrap">${brl(x[3])}</td></tr>`}).concat([`<tr><td colspan="4" style="font-weight:800">Total</td><td style="text-align:right;font-weight:800;white-space:nowrap">${brl(tot)}</td></tr>`]))+
+   sec('Por sistema')+tbl(['Sistema','Valor','%'],[[21,1850],[1,640],[14,520],[7,180]].map(([sy,v])=>`<tr><td>${sysOf(sy).n}</td><td style="white-space:nowrap">${brl(v)}</td><td>${Math.round(v/tot*100)}%</td></tr>`));
+ } else if(t==='mensal'){
+  filters=bsel+fld('Mês de referência',sel(['Outubro/2026 (emitido em 01/10)','Setembro/2026 (emitido em 01/09)','Agosto/2026 (emitido em 01/08)']))+
+   `<div class="card mb" style="margin-top:4px">${setRow('Emissão automática todo dia 1','Gerado às 7h e enviado por e-mail',sw(true),'clock')}${setRow('Enviar para a administradora',org==='Habitat Administradora'?'Carla Mendes, Marcelo Dias':'Administradoras dos edifícios',sw(true),'mail')}${setRow('Enviar para a construtora','Construtora Horizonte',sw(true),'brief')}</div>`+
+   `<div class="lbl mb">Relatórios já emitidos</div><div class="card">${[['Outubro/2026','01/10/2026'],['Setembro/2026','01/09/2026'],['Agosto/2026','01/08/2026']].map(r=>`<div class="li"><div class="kpi-ic" style="background:var(--da-50);color:var(--da)">${I('file',16)}</div><div class="grow"><div class="t">${r[0]}</div><div class="s">Emitido automaticamente em ${r[1]}</div></div><button class="btn btn-sm" data-act="toast" data-msg="Download do relatório de ${r[0]} (simulação)">${I('down',14)}PDF</button></div>`).join('')}</div>`;
+  period='emitido automaticamente em 01/10/2026';
+  const real=OCC.filter(o=>o.st==='realizada'&&o.date.getMonth()===8),pend=OCC.filter(o=>o.st==='atrasada'&&o.date.getMonth()===8),prox=OCC.filter(o=>['pendente','realizada'].includes(o.st)&&o.date.getMonth()===9);
+  body=kp([['Realizadas em setembro',real.length,'#e6f6ec'],['Pendentes de setembro',pend.length,'#fdecec'],['A realizar em outubro',prox.length,'#fdf2e1']])+
+   sec('1. Realizadas no mês anterior (setembro)')+tbl(['Data','Sistema','Atividade','Resp.'],real.slice(0,4).map(o=>`<tr><td>${fd(o.done)}</td><td>${sysOf(o.s).n}</td><td>${procOf(o.p).n}</td><td>${o.r==='T'?'Terceirizada':'Equipe local'}</td></tr>`))+
+   sec('2. Pendentes do mês anterior (não realizadas)')+tbl(['Venceu em','Sistema','Atividade'],pend.slice(0,4).map(o=>`<tr><td>${fd(o.date)}</td><td>${sysOf(o.s).n}</td><td>${procOf(o.p).n}</td></tr>`))+
+   sec('3. A realizar no mês corrente (outubro)')+tbl(['Vence em','Sistema','Atividade'],prox.slice(0,4).map(o=>`<tr><td>${fd(o.date)}</td><td>${sysOf(o.s).n}</td><td>${procOf(o.p).n}</td></tr>`));
+ } else {
+  filters=bsel+`<div class="g2">${fld('De','<input class="in" type="date" value="2026-07-01">')}${fld('Até','<input class="in" type="date" value="2026-10-13">')}</div>`+fld('Sistemas',sel(['Todos os sistemas',...SYS.slice(0,12).map(s=>s.n)]))+setRow('Incluir fotos das evidências','Adiciona as imagens anexadas em cada execução',sw(true));
+  const rows=OCC.filter(o=>t==='pend'?['atrasada','pendente'].includes(o.st):o.st==='realizada').slice(0,7);
+  body=kp([['Realizadas',stats().real],['Atrasadas',stats().atr],['Conformidade','87%']])+tbl(['Data','Sistema','Atividade','Resp.'],rows.map(o=>`<tr><td>${fd(o.done||o.date)}</td><td>${sysOf(o.s).n}</td><td>${procOf(o.p).n}</td><td>${o.r==='T'?'Terceirizada':o.r?'Equipe local':'—'}</td></tr>`));
+ }
  return pageH('Relatórios',state.role==='constr'?'Gere relatórios por edifício ou consolidados':'Por edifício ou consolidados · prontos para a assembleia ou para a construtora')+
  `<div class="cols cols-12">
   <div style="display:flex;flex-direction:column;gap:16px">
-   ${card('Tipo de relatório',types.map(([id,n,d,ic])=>`<div class="li" data-tab="${id}" data-tabg="${k}" style="cursor:pointer;${t===id?'background:var(--brand-50)':''}"><div class="kpi-ic" style="${t===id?'background:var(--brand);color:#fff':''}">${I(ic,18)}</div><div class="grow"><div class="t">${n}</div><div class="s">${d}</div></div>${t===id?`<span style="color:var(--brand)">${I('checkc',20)}</span>`:''}</div>`).join(''))}
-   ${card('Filtros',`<div class="card-b">
-    ${['constr','sind'].includes(state.role)?fld('Edifício',sel(['Todos os edifícios (consolidado)',...myBIds().map(id=>bOf(id).n)])):''}
-    <div class="g2">${fld('De','<input class="in" type="date" value="2026-07-01">')}${fld('Até','<input class="in" type="date" value="2026-10-13">')}</div>
-    ${fld('Sistemas',sel(['Todos os sistemas',...SYS.slice(0,12).map(s=>s.n)]))}
-    ${setRow('Incluir fotos das evidências','Adiciona as imagens anexadas em cada execução',sw(true))}
-    <div class="row mt"><button class="btn btn-p grow" data-act="toast" data-msg="PDF gerado: ${cur[1]} (simulação)">${I('file',18)}Gerar PDF</button><button class="btn grow" data-act="toast" data-msg="Planilha Excel exportada (simulação)">${I('table',18)}Exportar Excel</button></div>
-   </div>`)}
+   ${card('Tipo de relatório',types.map(([id,n,d,ic],ix)=>`<div class="li" data-tab="${id}" data-tabg="${k}" style="cursor:pointer;${t===id?'background:var(--brand-50)':''}"><div class="kpi-ic" style="${t===id?'background:var(--brand);color:#fff':''}">${I(ic,18)}</div><div class="grow"><div class="t">${n}${ix<3?' <span class="bd bd-br nodot" style="font-size:10px;padding:1px 6px">novo</span>':''}</div><div class="s">${d}</div></div>${t===id?`<span style="color:var(--brand)">${I('checkc',20)}</span>`:''}</div>`).join(''))}
+   ${card(t==='mensal'?'Configuração e histórico':'Filtros',`<div class="card-b">${filters}${btns}</div>`)}
   </div>
   ${card('Pré-visualização',`<div class="card-b" style="background:var(--sf2)"><div class="doc">
-   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #4f3ff0;padding-bottom:10px"><div style="display:flex;gap:8px;align-items:center;font-weight:800;letter-spacing:.06em"><span style="width:22px;height:22px;border-radius:6px;background:#4f3ff0;display:inline-block"></span>PREDIAL MOB</div><div style="color:#6c6b86">Emitido em 13/10/2026</div></div>
-   <div style="font-size:16px;font-weight:800;margin-top:14px">${cur[1]}</div><div style="color:#6c6b86">${state.role==='constr'?'Construtora Horizonte · consolidado':'Habitat Administradora · consolidado'} · 01/07/2026 a 13/10/2026</div>
-   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px">${[['Realizadas',stats().real],['Atrasadas',stats().atr],['Conformidade','87%']].map(x=>`<div style="background:#f4f3ff;border-radius:8px;padding:8px"><div style="font-size:16px;font-weight:800">${x[1]}</div><div style="color:#6c6b86">${x[0]}</div></div>`).join('')}</div>
-   <table><thead><tr><th>Data</th><th>Sistema</th><th>Atividade</th><th>Resp.</th></tr></thead><tbody>${rows.map(o=>`<tr><td>${fd(o.done||o.date)}</td><td>${sysOf(o.s).n}</td><td>${procOf(o.p).n}</td><td>${o.r==='T'?'Terceirizada':o.r?'Equipe local':'—'}</td></tr>`).join('')}</tbody></table>
-   <div style="color:#9a99b5;margin-top:10px;font-size:10px">Página 1 de 4 · gerado pelo Predial Mob</div>
+   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #4f3ff0;padding-bottom:10px"><div style="display:flex;gap:8px;align-items:center;font-weight:800;letter-spacing:.06em"><span style="width:22px;height:22px;border-radius:6px;background:#4f3ff0;display:inline-block"></span>PREDIAL MOB</div><div style="color:#6c6b86">${t==='mensal'?'Emitido em 01/10/2026':'Emitido em 13/10/2026'}</div></div>
+   <div style="font-size:16px;font-weight:800;margin-top:14px">${cur[1]}</div><div style="color:#6c6b86">${org} · consolidado · ${period}</div>
+   ${body}
+   <div style="color:#9a99b5;margin-top:10px;font-size:10px">Página 1 · gerado pelo Predial Mob</div>
   </div></div>`)}
  </div>`;
 }
@@ -806,7 +862,7 @@ function buildTable(list,admin=false){
  </tbody></table></div>`;
 }
 V['c-home']=()=>{
- const bs=myB(),atr=bs.reduce((a,b)=>a+b.atr,0),ch=CH.filter(c=>['b1','b2','b3','b4','b5'].includes(c.b)&&c.st!=='concluido');
+ const bs=myB(),atr=bs.reduce((a,b)=>a+b.atr,0),ch=CH.filter(c=>chVisible(c)&&c.st!=='concluido');
  const avg=Math.round(bs.reduce((a,b)=>a+b.conf,0)/bs.length);
  return pageH('Painel da construtora','Construtora Horizonte · visão consolidada dos edifícios entregues',`<button class="btn" data-go="c-rel">${I('file',18)}Relatório consolidado</button><button class="btn btn-p" data-act="newCh">${I('plus',18)}Abrir chamado</button>`)+
  `<div class="kpis">${kpi('Edifícios',bs.length,'build','','c-ed')}${kpi('Conformidade média',avg+'%','trend','ok','','meta: 85%')}${kpi('Manutenções atrasadas',atr,'alert','da')}${kpi('Chamados em aberto',ch.length,'head','wa','c-ch')}</div>
@@ -817,7 +873,7 @@ V['c-home']=()=>{
  </div>`;
 };
 V['c-ed']=()=>pageH('Edifícios','Construtora Horizonte · '+myB().length+' edifícios')+
- `<div class="gcards">${myB().map((b,i)=>`<div class="card bcard" data-go="ed" data-id="${b.id}"><div class="bcov" style="background:${grad(i)}"><span style="position:relative;z-index:1">${b.n}</span></div><div class="card-b"><div class="row between"><div><div class="sm mu">${b.city} · ${b.un} unidades</div><div class="sm">Administradora: <b>${aOf(b.ad).n}</b></div></div>${ring(b.conf,58,confColor(b.conf))}</div><div class="row mt" style="gap:8px">${b.atr?`<span class="bd bd-da">${b.atr} atrasadas</span>`:'<span class="bd bd-ok">Em dia</span>'}<span class="bd bd-wa nodot">${b.pend} no mês</span>${b.ch?`<span class="bd bd-in nodot">${b.ch} chamados</span>`:''}</div></div></div>`).join('')}</div>`;
+ `<div class="gcards">${myB().map((b,i)=>`<div class="card bcard" data-go="ed" data-id="${b.id}"><div class="bcov" style="background:${grad(i)}"><span style="position:relative;z-index:1">${b.n}</span></div><div class="card-b"><div class="row between"><div><div class="sm mu">${b.city} · ${b.un} unidades</div><div class="sm">Administradora: <b>${aOf(b.ad).n}</b></div></div>${ring(b.conf,58,confColor(b.conf))}</div><div class="row mt" style="gap:8px">${b.atr?`<span class="bd bd-da">${b.atr} atrasadas</span>`:'<span class="bd bd-ok">Em dia</span>'}<span class="bd bd-wa nodot">${b.pend} no mês</span>${b.chOff?'<span class="bd nodot">Chamados: canal próprio</span>':b.ch?`<span class="bd bd-in nodot">${b.ch} chamados</span>`:''}</div></div></div>`).join('')}</div>`;
 
 V['s-ed']=()=>pageH('Edifícios','Habitat Administradora · '+myBIds().length+' edifícios vinculados')+
  `<div class="gcards">${myBIds().map(bOf).map((b,i)=>`<div class="card bcard" data-go="ed" data-id="${b.id}"><div class="bcov" style="background:${grad(i)}"><span style="position:relative;z-index:1">${b.n}</span></div><div class="card-b"><div class="row between"><div><div class="sm mu">${b.city} · ${b.un} unidades</div><div class="sm">Construtora: <b>${cOf(b.c).n}</b></div></div>${ring(b.conf,58,confColor(b.conf))}</div><div class="row mt" style="gap:8px">${b.atr?`<span class="bd bd-da">${b.atr} atrasadas</span>`:'<span class="bd bd-ok">Em dia</span>'}<span class="bd bd-wa nodot">${b.pend} no mês</span>${b.ch?`<span class="bd bd-in nodot">${b.ch} chamados</span>`:''}</div></div></div>`).join('')}</div>
@@ -834,11 +890,14 @@ V.ed=()=>{
  const t=curTab(k,admin?'dados':'geral');
  const head=`<div class="card" style="overflow:hidden"><div class="bcov" style="background:${grad(i)};height:110px"><span style="position:relative;z-index:1">${b.n}</span></div><div class="card-b"><div class="row between wrap"><div class="sm mu">${cOf(b.c).n} · ${b.city} · ${b.un} unidades · administradora ${aOf(b.ad).n}</div><div class="row">${b.setup?'<span class="bd bd-wa">Configuração pendente</span>':`<span class="bd bd-${confCls(b.conf)} nodot">Conformidade ${b.conf}%</span>`}<button class="btn btn-sm" data-act="toast" data-msg="Abrindo o programa em PDF (simulação)">${I('eye',16)}Pré-visualizar programa</button></div></div></div></div><div class="mt"></div>`;
  if(!admin){
-  const tb=tabs(k,[['geral','Visão geral'],['man','Manutenções'],['ch','Chamados'],['prog','Programa']])+(state.role==='constr'&&t==='ch'?`<div class="row mb" style="justify-content:flex-end"><button class="btn btn-p" data-act="newCh" data-b="${b.id}">${I('plus',18)}Novo chamado para ${b.n}</button></div>`:'');
+  const tb=tabs(k,[['geral','Visão geral'],['man','Manutenções'],['ch','Chamados'],['prog','Programa']])+(state.role!=='admin'&&t==='ch'&&!b.chOff?`<div class="row mb" style="justify-content:flex-end"><button class="btn btn-p" data-act="newCh" data-b="${b.id}">${I('plus',18)}Novo chamado para ${b.n}</button></div>`:'');
   let body='';
   if(t==='geral')body=`<div class="kpis">${kpi('Conformidade',b.conf+'%','trend','ok')}${kpi('Atrasadas',b.atr,'alert','da')}${kpi('Pendentes do mês',b.pend,'cal','wa')}${kpi('Chamados abertos',b.ch,'head','in')}</div><div class="cols cols-2 mt">${card('Atrasadas por sistema',sysBars(OCC.filter(o=>o.st==='atrasada')))}${card('Execuções por mês','<div class="card-b">'+bars([['mai',24],['jun',27],['jul',22],['ago',29],['set',25],['out',9]],5)+'</div>')}</div>`;
   if(t==='man')body=`<div data-fscope>${filterBar()}<div class="card">${groupedList(OCC.filter(o=>['atrasada','pendente'].includes(o.st)))}</div></div>`;
-  if(t==='ch')body=card('',CH.filter(c=>c.b===b.id).map(c=>chItem(c)).join('')||'<div class="empty">Nenhum chamado para este edifício.</div>');
+  if(t==='ch'){
+   const ctl=state.role==='constr'?card('Chamados neste edifício',setRow('Usar os chamados do Predial Mob','Desligado: o menu de abertura e visualização de chamados some para todos os usuários do edifício (administradora e equipe)',`<button class="sw ${b.chOff?'':'on'}" data-act="chToggle" data-id="${b.id}" aria-label="Usar chamados"></button>`,'head')+(b.chOff?`<div class="card-b" style="border-top:1px solid var(--bd)"><div class="lbl mb">Canal próprio exibido aos usuários</div><div class="g2">${fld('Site ou sistema',`<input class="in" value="${(b.canal||CANAL).url}">`)}${fld('Telefone',`<input class="in" value="${(b.canal||CANAL).tel}">`)}</div>${fld('E-mail',`<input class="in" value="${(b.canal||CANAL).mail}">`)}<button class="btn btn-p btn-sm" data-act="toast" data-msg="Canal salvo">Salvar canal</button></div>`:''))+'<div class="mt"></div>':'';
+   body=ctl+(b.chOff?(state.role==='constr'?`<div class="sm b mu mb">O que os usuários do edifício veem:</div>`:'')+canalCard(b):card('',CH.filter(c=>c.b===b.id&&chVisible(c)).map(c=>chItem(c)).join('')||'<div class="empty">Nenhum chamado para este edifício.</div>'));
+  }
   if(t==='prog')body=progTable();
   return head+tb+body;
  }
@@ -849,7 +908,7 @@ V.ed=()=>{
  if(t==='sis')body=card('Sistemas do edifício',`<div class="tw"><table class="tbl"><thead><tr><th>Sistema</th><th>Início</th><th>Fim</th><th>Procedimentos</th><th>Manutenções geradas</th><th></th></tr></thead><tbody>${[...new Set(PROCS.map(p=>p.s))].map((s,j)=>`<tr><td class="tm" data-l="Sistema">${sysTag(s)}</td><td data-l="Início">01/0${1+j%9}/2025</td><td data-l="Fim">31/12/2030</td><td data-l="Procedimentos">${PROCS.filter(p=>p.s===s).length}</td><td data-l="Geradas">${40+j*13}</td><td data-l=""><button class="btn btn-sm" data-act="addSys">${I('edit',14)}Editar</button></td></tr>`).join('')}</tbody></table></div>`,`<button class="btn btn-p btn-sm" data-act="addSys">${I('plus',16)}Adicionar sistema</button>`);
  if(t==='proc')body=`<div data-fscope>${filterBar()}${card('',`<div class="tw"><table class="tbl"><thead><tr><th>Procedimento</th><th>Sistema</th><th>Periodicidade</th><th>Ativo</th></tr></thead><tbody>${PROCS.map(p=>`<tr class="fitem" data-sys="${p.s}"><td class="tm" data-l="Procedimento"><b>${p.n}</b><div class="xs mu">${p.ref}</div></td><td data-l="Sistema">${sysTag(p.s)}</td><td data-l="Periodicidade">${p.per}</td><td data-l="Ativo">${sw(p.ativo)}</td></tr>`).join('')}</tbody></table></div>`)}</div>`;
  if(t==='prog')body=`<div class="alert br" style="cursor:default">${I('refresh')}<div class="grow sm">O programa é gerado automaticamente a partir dos sistemas e procedimentos ativos. Recrie apenas após mudanças grandes.</div><button class="btn btn-da btn-sm" data-act="recriar" data-n="${b.n}">Recriar programa</button></div>`+progTable();
- if(t==='cfg')body=`<div class="cols cols-2">${card('Situações padrão',`<div class="card-b">${fld('Manutenção aberta',sel(['Pendente','Aguardando'],'Pendente'),'Situação aplicada às ocorrências geradas')}${fld('Manutenção realizada',sel(['Realizada','Concluída'],'Realizada'))}${fld('Abertura de chamado',sel(['Aberto','Em análise'],'Aberto'),'Antes não havia situação padrão definida, o que impedia a abertura de chamados')}<button class="btn btn-p" data-act="toast" data-msg="Configurações salvas (simulação)">Salvar</button></div>`)}
+ if(t==='cfg')body=`<div class="alert ${b.chOff?'wa':'in'}" style="cursor:default">${I('head')}<div class="sm">Chamados neste edifício: <b>${b.chOff?'ocultos pela construtora (canal próprio)':'ativos'}</b>. Essa opção é controlada pela construtora.</div></div><div class="cols cols-2">${card('Situações padrão',`<div class="card-b">${fld('Manutenção aberta',sel(['Pendente','Aguardando'],'Pendente'),'Situação aplicada às ocorrências geradas')}${fld('Manutenção realizada',sel(['Realizada','Concluída'],'Realizada'))}${fld('Abertura de chamado',sel(['Aberto','Em análise'],'Aberto'),'Antes não havia situação padrão definida, o que impedia a abertura de chamados')}<button class="btn btn-p" data-act="toast" data-msg="Configurações salvas (simulação)">Salvar</button></div>`)}
   ${card('Situações deste edifício',[['Pendente','#d97706','manutenção'],['Realizada','#15a34a','manutenção'],['Aberto','#0279b8','chamado'],['Em análise','#4f3ff0','chamado'],['Agendado','#c76d04','chamado'],['Concluído','#15a34a','chamado']].map(s=>`<div class="li"><span class="swatch" style="background:${s[1]}"></span><div class="grow"><div class="t">${s[0]}</div><div class="s">${s[2]}</div></div><button class="ib" data-act="toast" data-msg="Editar situação (simulação)">${I('edit',16)}</button></div>`).join(''),`<button class="btn btn-sm" data-act="toast" data-msg="Nova situação (simulação)">${I('plus',16)}Nova</button>`)}</div>`;
  return head+tb+body;
 };
@@ -981,7 +1040,7 @@ V.perfil=()=>{
    ========================================================= */
 function shell(content){
  const r=R(),route=state.route,isDet=!!DETAIL[route];
- const nav=r.nav,active=isDet?(state.stack.length?state.stack[state.stack.length-1].route:nav[0][0]):route;
+ const nav=r.nav.filter(n=>!(['s-ch','z-ch'].includes(n[0])&&myBIds().every(id=>bOf(id).chOff))),active=isDet?(state.stack.length?state.stack[state.stack.length-1].route:nav[0][0]):route;
  const title=isDet?DETAIL[route]:(nav.find(n=>n[0]===route)||[])[1]||'';
  const cnt={'s-man':stats().atr,'z-man':stats().atr,'c-ch':4,'adm-ch':5};
  const bnItems=nav.length>5?nav.slice(0,4):nav;
@@ -1042,27 +1101,33 @@ function closeSheet(){ov.className='ov';ov.innerHTML='';}
 let tt;function toast(m,ic='checkc'){const t=document.getElementById('toast');t.innerHTML=I(ic,18)+m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600);}
 
 function wizHTML(){
- const w=state.wiz,multi=myBIds().length>1,tot=multi?4:3,off=multi?1:0;
- if(!multi&&!w.b)w.b=myBIds()[0];
- const steps=`<div class="wz">${Array.from({length:tot},(_,i)=>`<div class="${i<w.step+off||(!w.b&&i===0)?'on':''}"></div>`).join('')}</div>`;
- const P=(n,l)=>`Passo ${n+off} de ${tot} · ${l}`;
- if(!w.b)return sheet('Novo chamado',`<div class="wz">${Array.from({length:tot},(_,i)=>`<div class="${i===0?'on':''}"></div>`).join('')}</div><div class="b mb">Para qual empreendimento é o chamado?</div><div class="card">${myBIds().map(bOf).map((b,i)=>`<div class="li" data-act="wizB" data-id="${b.id}"><div class="av" style="border-radius:10px;background:${grad(i)}">${initials(b.n)}</div><div class="grow"><div class="t">${b.n}</div><div class="s">${b.city} · ${cOf(b.c).n}</div></div>${b.atr?`<span class="bd bd-da nodot">${b.atr} atrasadas</span>`:''}${I('chevR',18)}</div>`).join('')}</div>`,'',`Passo 1 de ${tot} · Empreendimento`);
- const bsel=multi?`<div class="row mb" style="padding:10px 12px;background:var(--sf2);border-radius:12px;border:1px solid var(--bd)">${I('build',18)}<b>${bOf(w.b).n}</b><button class="btn btn-gh btn-sm" style="margin-left:auto" data-act="wizChB">Trocar</button></div>`:'';
+ const w=state.wiz,ids=myBIds().filter(id=>!bOf(id).chOff),multi=ids.length>1,off=multi?1:0,tot=off+4;
+ if(!multi&&!w.b)w.b=ids[0];
+ const bar=n=>`<div class="wz">${Array.from({length:tot},(_,i)=>`<div class="${i<n?'on':''}"></div>`).join('')}</div>`;
+ const P=(n,l)=>`Passo ${n} de ${tot} · ${l}`;
+ const pill=(ic,txt,act)=>`<div class="row mb" style="padding:10px 12px;background:var(--sf2);border-radius:12px;border:1px solid var(--bd)">${ic}<b class="ell">${txt}</b><button class="btn btn-gh btn-sm" style="margin-left:auto" data-act="${act}">Trocar</button></div>`;
+ if(!w.b){const off_=myBIds().map(bOf).filter(b=>b.chOff);
+  return sheet('Novo chamado',bar(1)+`<div class="b mb">Para qual empreendimento é o chamado?</div><div class="card">${ids.map(bOf).map((b,i)=>`<div class="li" data-act="wizB" data-id="${b.id}"><div class="av" style="border-radius:10px;background:${grad(i)}">${initials(b.n)}</div><div class="grow"><div class="t">${b.n}</div><div class="s">${b.city} · ${cOf(b.c).n}</div></div>${b.atr?`<span class="bd bd-da nodot">${b.atr} atrasadas</span>`:''}${I('chevR',18)}</div>`).join('')}${off_.map(b=>`<div class="li" style="opacity:.55"><div class="av" style="border-radius:10px;background:var(--mu)">${initials(b.n)}</div><div class="grow"><div class="t">${b.n}</div><div class="s">Chamados pelo canal da construtora · ${(b.canal||CANAL).tel}</div></div></div>`).join('')}</div>`,'',P(1,'Empreendimento'));}
+ const b=bOf(w.b),bsel=multi?pill(I('build',18),b.n,'wizChB'):'';
+ if(!w.to){const opts=['sind','zel','constr'].filter(r=>r!==state.role);
+  return sheet('Novo chamado',bar(off+1)+bsel+`<div class="b mb">Para quem é o chamado?</div><div style="display:flex;flex-direction:column;gap:10px">${opts.map(r=>`<div class="li" data-act="wizTo" data-to="${r}" style="border:1px solid var(--bd);border-radius:14px"><div class="kpi-ic">${I(r==='sind'?'build':r==='zel'?'wrench':'brief',18)}</div><div class="grow"><div class="t">${RN[r]}</div><div class="s">${orgOf(r,b)}</div></div>${I('chevR',18)}</div>`).join('')}</div><div class="hint mt">Qualquer pessoa ${''}do destinatário pode assumir o chamado. Se quiser, você escolhe alguém específico no próximo passo.</div>`,'',P(off+1,'Destinatário'));}
+ const tsel=pill(I('send',18),'Para: '+RN[w.to]+' · '+orgOf(w.to,b),'wizChTo');
  if(w.warn){const atr=OCC.filter(o=>o.s===w.sys&&o.st==='atrasada'),sy=sysOf(w.sys);
-  return sheet('Atenção',steps+`<div style="text-align:center;padding:6px 4px 18px"><div style="width:64px;height:64px;border-radius:20px;background:var(--wa-50);color:var(--wa);display:grid;place-items:center;margin:0 auto 14px">${I('alert',32)}</div><h3 style="font-size:19px;font-weight:800">Sistema com manutenções em atraso</h3><div class="mu" style="margin-top:6px">${sy.n} tem ${atr.length} ${atr.length>1?'manutenções atrasadas':'manutenção atrasada'}. O problema pode estar relacionado a isso, e a falta de manutenção pode afetar a garantia.</div><div class="b" style="margin-top:14px">Deseja continuar?</div></div>
+  return sheet('Atenção',bar(off+2)+`<div style="text-align:center;padding:6px 4px 18px"><div style="width:64px;height:64px;border-radius:20px;background:var(--wa-50);color:var(--wa);display:grid;place-items:center;margin:0 auto 14px">${I('alert',32)}</div><h3 style="font-size:19px;font-weight:800">Sistema com manutenções em atraso</h3><div class="mu" style="margin-top:6px">${sy.n} tem ${atr.length} ${atr.length>1?'manutenções atrasadas':'manutenção atrasada'}. O problema pode estar relacionado a isso, e a falta de manutenção pode afetar a garantia.</div><div class="b" style="margin-top:14px">Deseja continuar?</div></div>
   <div class="card">${atr.map(o=>{const p=procOf(o.p);return `<div class="li"><span class="mbar" style="background:${sy.c}"></span><div class="grow"><div class="t">${p.n}</div><div class="s">a cada ${p.per} · #${o.idx}</div></div><div style="text-align:right"><div class="sm b" style="margin-bottom:3px">Venceu em ${fs(o.date)}</div>${badge('atrasada')}</div></div>`}).join('')}</div>`,
-  `<button class="btn" data-act="wizBack">Trocar sistema</button><button class="btn btn-p" data-act="wizGo">Continuar</button>`,P(1,'Sistema'));}
- if(w.step===1)return sheet('Novo chamado',steps+bsel+`<div class="b mb">A qual sistema do prédio o problema está relacionado?</div><div class="srch mb">${I('search',18)}<input class="in" placeholder="Buscar sistema..." data-wsearch></div><div class="syst">${SYS.map(s=>`<button data-act="wizSys" data-s="${s.id}" data-name="${s.n.toLowerCase()}"><span class="row between"><span class="sq" style="background:${s.c};width:14px;height:14px"></span>${OCC.some(o=>o.s===s.id&&o.st==='atrasada')?`<span class="bd bd-da nodot" style="font-size:10.5px;padding:1px 7px">${I('alert',11)} em atraso</span>`:''}</span>${s.n}</button>`).join('')}</div>`,'',P(1,'Sistema'));
- if(w.step===2)return sheet('Novo chamado',steps+`<div class="row mb" style="padding:10px 12px;background:var(--sf2);border-radius:12px;border:1px solid var(--bd)">${sysTag(w.sys)}<button class="btn btn-gh btn-sm" style="margin-left:auto" data-act="wizBack">Trocar</button></div>
-  ${fld('Resumo do problema','<input class="in" id="wt" placeholder="Ex.: Infiltração no teto da garagem">')}
-  ${fld('Descreva o que está acontecendo','<textarea class="in" placeholder="Onde, desde quando, o que você percebeu..."></textarea>')}
-  ${fld('Local',sel(['Área comum','Unidade privativa','Fachada','Garagem','Cobertura']))}
+  `<button class="btn" data-act="wizBack">Trocar sistema</button><button class="btn btn-p" data-act="wizGo">Continuar</button>`,P(off+2,'Sistema'));}
+ if(w.step===1)return sheet('Novo chamado',bar(off+2)+bsel+tsel+`<div class="b mb">A qual sistema do prédio o assunto está relacionado?</div><div class="srch mb">${I('search',18)}<input class="in" placeholder="Buscar sistema..." data-wsearch></div><div class="syst"><button data-act="wizSys" data-s="0" data-name="geral sem sistema"><span class="sq" style="background:${GERAL.c};width:14px;height:14px"></span>Geral (sem sistema)</button>${SYS.map(s=>`<button data-act="wizSys" data-s="${s.id}" data-name="${s.n.toLowerCase()}"><span class="row between"><span class="sq" style="background:${s.c};width:14px;height:14px"></span>${w.to==='constr'&&OCC.some(o=>o.s===s.id&&o.st==='atrasada')?`<span class="bd bd-da nodot" style="font-size:10.5px;padding:1px 7px">${I('alert',11)} em atraso</span>`:''}</span>${s.n}</button>`).join('')}</div>`,'',P(off+2,'Sistema'));
+ const ppl={sind:['Carla Mendes','Marcelo Dias'],zel:['João Pereira','Rafael Souza'],constr:['Marcos Teixeira','Bianca Rocha']}[w.to];
+ if(w.step===2)return sheet('Novo chamado',bar(off+3)+tsel+`<div class="row mb" style="padding:10px 12px;background:var(--sf2);border-radius:12px;border:1px solid var(--bd)">${sysTag(w.sys)}<button class="btn btn-gh btn-sm" style="margin-left:auto" data-act="wizBack">Trocar</button></div>
+  ${fld('Assunto','<input class="in" id="wt" placeholder="Ex.: Infiltração no teto da garagem">')}
+  ${fld('Descrição','<textarea class="in" placeholder="O que está acontecendo ou o que você precisa..."></textarea>')}
+  <div class="g2">${fld('Local',sel(['Área comum','Unidade privativa','Fachada','Garagem','Cobertura']))}${fld('Pessoa específica (opcional)',sel(['Qualquer pessoa',...ppl]))}</div>
   <div class="fld"><label>Urgência</label><div class="seg"><button data-act="seg">Baixa</button><button class="on" data-act="seg">Normal</button><button data-act="seg">Alta</button></div></div>
   <div class="fld"><label>Fotos ou vídeos</label><div class="drop" data-act="toast" data-msg="No celular, abre a câmera ou a galeria">${I('camera',26)}<div class="b" style="margin-top:6px">Tirar foto ou anexar</div><div class="xs">JPG, PNG ou MP4 · até 20 MB</div></div></div>`,
-  `<button class="btn" data-act="wizBack">Voltar</button><button class="btn btn-p" data-act="wizNext">Revisar</button>`,P(2,'Detalhes'));
- return sheet('Revise e envie',steps+`<div class="info"><div><div class="k">Edifício</div><div class="v">${bOf(w.b).n}</div></div><div><div class="k">Sistema</div><div class="v">${sysOf(w.sys).n}</div></div><div><div class="k">Resumo</div><div class="v">${w.title||'Problema relatado'}</div></div><div><div class="k">Urgência</div><div class="v">Normal</div></div></div>
-  <div class="alert in mt" style="cursor:default">${I('bell')}<div class="sm">${state.role==='constr'?'O chamado entra no quadro de assistência técnica e a administradora do edifício é notificada.':'A construtora será notificada e você acompanha o andamento pelo app e por e-mail.'}</div></div>`,
-  `<button class="btn" data-act="wizBack">Voltar</button><button class="btn btn-p" data-act="wizSend">${I('send',18)}Enviar chamado</button>`,P(3,'Revisão'));
+  `<button class="btn" data-act="wizBack">Voltar</button><button class="btn btn-p" data-act="wizNext">Revisar</button>`,P(off+3,'Detalhes'));
+ return sheet('Revise e envie',bar(off+4)+`<div class="info"><div><div class="k">Edifício</div><div class="v">${b.n}</div></div><div><div class="k">Para</div><div class="v">${RN[w.to]}</div><div class="xs mu">${orgOf(w.to,b)}</div></div><div><div class="k">Sistema</div><div class="v">${sysOf(w.sys).n}</div></div><div><div class="k">Assunto</div><div class="v">${w.title||'Assunto informado'}</div></div></div>
+  <div class="alert in mt" style="cursor:default">${I('bell')}<div class="sm">${orgOf(w.to,b)} será notificada na plataforma e por e-mail. Você acompanha as respostas em Chamados › Enviados.</div></div>`,
+  `<button class="btn" data-act="wizBack">Voltar</button><button class="btn btn-p" data-act="wizSend">${I('send',18)}Enviar chamado</button>`,P(off+4,'Revisão'));
 }
 
 const ACT={
@@ -1088,19 +1153,22 @@ const ACT={
   <div class="fld"><label>Fotos da execução</label><div class="phos">${photo(1)}${photo(3)}<div class="pho drop" style="border-radius:12px;padding:0;color:var(--mu);background:var(--sf2)" data-act="toast" data-msg="No celular, abre a câmera">${I('camera',22)}</div></div><div class="hint">Recomendado: pelo menos uma foto como evidência</div></div>`,
   `<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="saveReg">${I('check',18)}Salvar registro</button>`,`${p.n} · ocorrência #${o.idx}`));},
  saveReg:()=>{const s=document.getElementById('regst');if(!s.value){s.classList.add('err');s.focus();toast('Selecione a situação da manutenção','alert');return;}closeSheet();toast('Execução registrada com 2 fotos (simulação)');},
- newCh:t=>{state.wiz={step:1,sys:null,b:(t&&t.dataset&&t.dataset.b)||null};openSheet(wizHTML());},
- wizB:t=>{state.wiz.b=t.dataset.id;state.wiz.step=1;state.wiz.sys=null;state.wiz.warn=false;openSheet(wizHTML());},
- wizChB:()=>{state.wiz={step:1,sys:null,b:null};openSheet(wizHTML());},
+ newCh:t=>{state.wiz={step:1,sys:null,b:(t&&t.dataset&&t.dataset.b)||null,to:null};openSheet(wizHTML());},
+ wizTo:t=>{state.wiz.to=t.dataset.to;state.wiz.step=1;state.wiz.sys=null;state.wiz.warn=false;openSheet(wizHTML());},
+ wizChTo:()=>{Object.assign(state.wiz,{to:null,sys:null,warn:false,step:1});openSheet(wizHTML());},
+ chToggle:t=>{const b=bOf(t.dataset.id);b.chOff=!b.chOff;render();toast(b.chOff?`Chamados ocultos em ${b.n} · os usuários verão o canal da construtora`:`Chamados reativados em ${b.n}`,b.chOff?'eye':'checkc');},
+ wizB:t=>{Object.assign(state.wiz,{b:t.dataset.id,step:1,sys:null,warn:false,to:null});openSheet(wizHTML());},
+ wizChB:()=>{state.wiz={step:1,sys:null,b:null,to:null};openSheet(wizHTML());},
  setB:t=>{state.bld=t.dataset.id;render();},
  member:t=>{const m=TEAM[+t.dataset.i],all=m[2]==='all';openSheet(sheet(m[0],`<div class="row mb">${av(m[0],'lg')}<div><div class="b">${m[1]}</div><div class="sm mu">Último acesso ${m[3]}</div></div></div>${fld('Perfil',sel(['Gestor da administradora','Zelador','Equipe de manutenção','Empresa terceirizada'],m[1].startsWith('Gestora')?'Gestor da administradora':m[1].split(' ·')[0]))}<div class="lbl mb">Edifícios que atende</div><div class="card mb">${myBIds().map(id=>setRow(bOf(id).n,bOf(id).city,sw(all||m[2].includes(id)))).join('')}</div><div class="alert in" style="cursor:default">${I('shield')}<div class="sm">Somente a administradora define quais edifícios cada pessoa da equipe atende.</div></div>`,`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Acessos atualizados">Salvar</button>`));},
  admDet:t=>{const a=aOf(t.dataset.id),bs=BUILD.filter(b=>b.ad===a.id);openSheet(sheet(a.n,`<div class="fld"><label>Tipo</label><div class="seg"><button class="${a.t==='Empresa'?'on':''}" data-act="seg">Empresa administradora</button><button class="${a.t==='Síndico'?'on':''}" data-act="seg">Síndico</button></div></div>${fld(a.t==='Síndico'?'Nome':'Razão social',`<input class="in" value="${a.n}">`)}${fld(a.t==='Síndico'?'CPF':'CNPJ',`<input class="in" value="${a.cnpj}">`)}<div class="row between mb"><span class="lbl">Edifícios vinculados (${bs.length})</span><button class="btn btn-gh btn-sm" data-act="toast" data-msg="Selecionar edifício para vincular (simulação)">${I('plus',16)}Vincular</button></div><div class="card">${bs.map((b,i)=>`<div class="li"><div class="av" style="border-radius:9px;background:${grad(i)}">${initials(b.n)}</div><div class="grow"><div class="t">${b.n}</div><div class="s">${cOf(b.c).n}</div></div><button class="ib" data-act="toast" data-msg="Edifício desvinculado (simulação)">${I('x',16)}</button></div>`).join('')}</div>`,`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Administradora atualizada">Salvar</button>`,a.t==='Síndico'?'Síndico com conta de administradora':'Empresa administradora'));},
  newAdm:()=>openSheet(sheet('Nova administradora',`<div class="fld"><label>Tipo</label><div class="seg"><button class="on" data-act="seg">Empresa administradora</button><button data-act="seg">Síndico</button></div><div class="hint">Síndico: conta de administradora com apenas o seu edifício.</div></div>`+fld('Razão social ou nome','<input class="in">')+`<div class="g2">${fld('CNPJ ou CPF','<input class="in">')}${fld('Telefone','<input class="in">')}</div>`+fld('E-mail do responsável','<input class="in">')+fld('Edifícios',sel(['Selecione os edifícios...',...BUILD.map(b=>b.n)]))+setRow('Enviar convite de acesso ao responsável','Perfil Administradora',sw(true)),`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Administradora cadastrada">Cadastrar</button>`)),
- wizSys:t=>{const id=+t.dataset.s;state.wiz.sys=id;if(OCC.some(o=>o.s===id&&o.st==='atrasada')){state.wiz.warn=true;}else{state.wiz.step=2;}openSheet(wizHTML());},
+ wizSys:t=>{const id=+t.dataset.s;state.wiz.sys=id;if(state.wiz.to==='constr'&&OCC.some(o=>o.s===id&&o.st==='atrasada')){state.wiz.warn=true;}else{state.wiz.step=2;}openSheet(wizHTML());},
  wizGo:()=>{state.wiz.warn=false;state.wiz.step=2;openSheet(wizHTML());},
- wizBack:()=>{const w=state.wiz;if(w.warn){w.warn=false;w.sys=null;}else if(w.step===1&&myBIds().length>1){w.b=null;}else w.step=Math.max(1,w.step-1);openSheet(wizHTML());},
+ wizBack:()=>{const w=state.wiz;if(w.warn){w.warn=false;w.sys=null;}else if(w.step===1){w.to=null;}else w.step=Math.max(1,w.step-1);openSheet(wizHTML());},
  wizNext:()=>{const i=document.getElementById('wt');state.wiz.title=i&&i.value;state.wiz.step=3;openSheet(wizHTML());},
- wizSend:()=>{closeSheet();toast(state.role==='constr'?'Chamado #1043 aberto e incluído no quadro (simulação)':'Chamado #1043 enviado à construtora (simulação)','send');},
- chStatus:()=>openSheet(sheet('Alterar situação',`<div style="display:flex;flex-direction:column;gap:8px">${CHORD.map(s=>`<label class="li" style="border:1px solid var(--bd);border-radius:12px;cursor:pointer"><input type="radio" name="cs" ${s==='atendimento'?'checked':''}>${chBadge(s)}</label>`).join('')}</div>${fld('Anotação','<textarea class="in" placeholder="Explique a mudança para quem abriu o chamado"></textarea>')}`,`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Situação atualizada · administradora notificada">Salvar</button>`),true),
+ wizSend:()=>{const w=state.wiz;closeSheet();toast(`Chamado #1047 enviado para ${orgOf(w.to,bOf(w.b))} (simulação)`,'send');},
+ chStatus:()=>openSheet(sheet('Alterar situação',`<div style="display:flex;flex-direction:column;gap:8px">${CHORD.map(s=>`<label class="li" style="border:1px solid var(--bd);border-radius:12px;cursor:pointer"><input type="radio" name="cs" ${s==='atendimento'?'checked':''}>${chBadge(s)}</label>`).join('')}</div>${fld('Anotação','<textarea class="in" placeholder="Explique a mudança para quem abriu o chamado"></textarea>')}`,`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Situação atualizada · quem abriu o chamado foi notificado">Salvar</button>`),true),
  chAssign:()=>openSheet(sheet('Atribuir responsável',fld('Responsável',sel(['Marcos Teixeira','Bianca Rocha','Equipe técnica Horizonte']))+fld('Data prevista','<input class="in" type="date" value="2026-10-16">')+`<div class="hint">${I('bell',13)} O responsável, quem abriu o chamado e a administradora serão notificados.</div>`,`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Responsável atribuído · notificação enviada ao responsável e à administradora">Salvar</button>`),true),
  chCost:()=>openSheet(sheet('Registrar custo',fld('Descrição','<input class="in" placeholder="Ex.: Material de impermeabilização">')+`<div class="g2">${fld('Valor','<input class="in" placeholder="R$ 0,00">')}${fld('Data','<input class="in" type="date" value="2026-10-13">')}</div><div class="drop" data-act="toast" data-msg="Anexar nota fiscal (simulação)">${I('up',22)}<div class="b">Anexar nota fiscal</div></div>`,`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Custo lançado · administradora e construtora notificadas">Lançar custo</button>`),true),
  done:t=>{closeSheet();toast(t.dataset.msg);},
