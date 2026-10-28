@@ -250,6 +250,10 @@ select.in{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 @media(min-width:1100px){.gcards{grid-template-columns:repeat(3,1fr)}}
 .diff{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
 .diff .rm{color:var(--da);text-decoration:line-through}.diff .ad{color:var(--ok)}
+.stp{display:flex;gap:6px;margin:0 0 16px}.stp i{flex:1;height:4px;border-radius:4px;background:var(--bd)}.stp i.on{background:var(--brand)}
+textarea.in.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;min-height:300px;white-space:pre;overflow:auto}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--da);word-break:break-all}
+details>summary{list-style:none}details>summary::-webkit-details-marker{display:none}
 .swatch{width:18px;height:18px;border-radius:6px;flex:none;border:1px solid rgba(0,0,0,.06)}
 
 /* sheet / modal */
@@ -269,6 +273,7 @@ select.in{appearance:none;-webkit-appearance:none;background-image:url("data:ima
   .sheet-h::before{display:none}
   .ov.modal{align-items:center;justify-content:center}
   .ov.modal .sheet{height:auto;width:540px;border-radius:20px;max-height:88vh;animation:up .2s ease}
+  .ov.modal .sheet:has(.stp){width:680px}
 }
 .toast{position:fixed;left:50%;bottom:100px;transform:translate(-50%,20px);background:var(--tx);color:var(--sf);padding:12px 18px;border-radius:14px;font-weight:650;opacity:0;pointer-events:none;transition:.25s;z-index:200;display:flex;gap:10px;align-items:center;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -819,16 +824,165 @@ function relView(){
 }
 V['s-rel']=relView;V['c-rel']=relView;
 
-function progTable(){
+/* ---------------- personalização por edifício ---------------- */
+const PERS_OPTS=['1 semana','2 semanas','1 mês','2 meses','3 meses','6 meses','1 ano','2 anos','5 anos'];
+const CUST={b1:{
+ p3:{per:'3 meses',d:'Neste edifício a água de reúso recebe água de chuva com muito sedimento; por isso a limpeza é trimestral.'},
+ p19:{per:'2 semanas',resp:'Equipe de manutenção local, Empresa especializada',ref:'CBIC · Instrução Normativa CBMSC'},
+ p24:{per:'2 meses',aviso:'O padrão do catálogo mudou de <b>2 meses</b> para <b>1 mês</b> em 10/10/2026. Este edifício manteve a personalização.'}
+}};
+const EXCL={b1:[{id:'x1',s:1,sub:'Reúso',n:'Inspeção do sistema de reúso de água da chuva',per:'1 mês',resp:'Equipe de manutenção local',ref:'Orientação do fabricante',art:'Manual AquaVerde F-300 · seção 4',d:'1. Abrir a tampa do filtro de descarte.\n2. Retirar folhas e detritos.\n3. Verificar a boia do reservatório.\n4. Fotografar o filtro limpo.',ativo:true,excl:true}]};
+function procsFor(bid){
+ const b=bOf(bid);if(b.prog)return b.prog;
+ const c=CUST[bid]||{};
+ return [...PROCS.map(p=>c[p.id]?{...p,...c[p.id],cust:true,base:p}:p),...(EXCL[bid]||[])];
+}
+function perDays(p){const m=String(p).match(/(\d+)\s*(\S+)/);if(!m)return 30;const n=+m[1],u=m[2];return n*(u.startsWith('dia')?1:u.startsWith('semana')?7:u.startsWith('m')?30.4:365);}
+const occN=(per,meses=24)=>Math.max(1,Math.floor(meses*30.4/perDays(per)));
+const perFmt=o=>{if(!o)return '';const u={dias:['dia','dias'],semanas:['semana','semanas'],meses:['mês','meses'],anos:['ano','anos']}[o.unidade];return o.valor+' '+(o.valor===1?u[0]:u[1])+(o.observacao?' ('+o.observacao+')':'');};
+const badgeP=p=>(p.cust?' <span class="bd bd-br nodot">Personalizado</span>':'')+(p.excl?' <span class="bd bd-in nodot">Exclusivo</span>':'')+(p.ativo===false?' <span class="bd nodot">Inativo</span>':'');
+const perCell=p=>p.cust&&p.base&&p.per!==p.base.per?`<span class="xs mu" style="text-decoration:line-through">${p.base.per}</span> → <b>${p.per}</b>`:p.per;
+function impTxt(a,b){const x=occN(a),y=occN(b);return `${I('refresh',18)}<div class="sm"><b>Prévia do impacto:</b> nos próximos 24 meses, ${a===b?`continuam <b>${x} manutenções</b> previstas (sem mudança)`:`de <b>${x}</b> para <b>${y} manutenções</b> previstas (${y>=x?'+':''}${y-x})`}. Só as futuras são recalculadas. Pendentes, atrasadas e realizadas ficam como estão.</div>`;}
+function procAdmTab(b){
+ const L=procsFor(b.id),nc=L.filter(p=>p.cust).length,ne=L.filter(p=>p.excl).length,av=L.filter(p=>p.aviso);
+ return (av.length?`<div class="alert wa" data-act="procCust" data-b="${b.id}" data-id="${av[0].id}">${I('alert')}<div class="grow sm">${av.length} procedimento personalizado teve o padrão do catálogo alterado: <b>${av[0].n}</b>. Revise se a personalização ainda faz sentido.</div>${I('chevR',18)}</div>`:'')+
+ `<div class="row between wrap mb" style="gap:10px"><div class="sm mu">${L.length} procedimentos · <b>${nc}</b> personalizado${nc===1?'':'s'} · <b>${ne}</b> exclusivo${ne===1?'':'s'} deste edifício</div><button class="btn btn-p btn-sm" data-act="procExclNew" data-b="${b.id}">${I('plus',16)}Procedimento exclusivo</button></div>`+
+ `<div data-fscope>${filterBar()}${card('',`<div class="tw"><table class="tbl"><thead><tr><th>Procedimento</th><th>Sistema</th><th>Periodicidade</th><th>Ativo</th><th></th></tr></thead><tbody>${L.map(p=>`<tr class="fitem" data-sys="${p.s}"><td class="tm" data-l="Procedimento"><b>${p.n}</b>${badgeP(p)}<div class="xs mu">${p.ref}</div></td><td data-l="Sistema">${sysTag(p.s)}</td><td data-l="Periodicidade">${perCell(p)}</td><td data-l="Ativo">${sw(p.ativo!==false)}</td><td data-l=""><button class="btn btn-sm" data-act="procCust" data-b="${b.id}" data-id="${p.id}">${I(p.excl?'edit':'sliders',14)}${p.excl?'Editar':'Personalizar'}</button></td></tr>`).join('')}</tbody></table></div>`)}</div>`;
+}
+const respChips=cur=>`<div class="fld"><label>Responsáveis</label><div class="chips" id="pcR" style="flex-wrap:wrap">${RESPS.map(r=>`<button class="chip ${String(cur).split(', ').includes(r)?'on':''}" data-act="sw">${r}</button>`).join('')}</div></div>`;
+function procCustSheet(b,p){
+ const base=p.base||(!p.excl&&procOf(p.id))||null;
+ return sheet(p.excl?'Procedimento exclusivo':'Personalizar neste edifício',
+  (p.aviso?`<div class="alert wa" style="cursor:default;flex-wrap:wrap">${I('alert')}<div class="sm" style="flex:1 1 200px">${p.aviso}</div><div class="row wrap" style="gap:8px;width:100%;justify-content:flex-end"><button class="btn btn-sm" data-act="close">Manter personalização</button><button class="btn btn-sm btn-p" data-act="procReset" data-b="${b.id}" data-id="${p.id}">Adotar novo padrão</button></div></div>`:'')+
+  (base?`<div class="card mb"><div class="card-b"><div class="lbl mb">Padrão do catálogo</div><div class="sm"><b>${base.n}</b></div><div class="xs mu">A cada ${base.per} · ${base.resp} · ${base.ref}</div></div></div>`:`<div class="alert in" style="cursor:default">${I('build')}<div class="sm">Existe só em <b>${b.n}</b>. Não aparece no catálogo nem nos outros edifícios.</div></div>`)+
+  fld('Descrição neste edifício',`<input class="in" id="pcN" value="${p.n}">`)+
+  `<div class="g2">${fld('Periodicidade',sel(PERS_OPTS.includes(p.per)?PERS_OPTS:[p.per,...PERS_OPTS],p.per,`id="pcPer" data-perimp="${p.per}"`))}${fld('Primeira execução','<input class="in" type="date" value="2026-11-01">','Opcional')}</div>`+
+  respChips(p.resp)+
+  fld('Instruções para a equipe',`<textarea class="in" id="pcD">${p.d||''}</textarea>`)+
+  `<div class="lbl mb">Referências</div><div class="card mb"><div class="li"><div class="grow"><div class="t">${p.ref}</div><div class="s">${p.art||''}</div></div><button class="ib" data-act="toast" data-msg="Editar referência">${I('edit',16)}</button></div><div class="li" data-act="toast" data-msg="Adicionar referência com artigo, página e parágrafo" style="color:var(--brand);font-weight:700">${I('plus',18)}Adicionar referência</div></div>`+
+  `<div class="alert br" id="pcImp" style="cursor:default">${impTxt(p.per,p.per)}</div>`+
+  (base?`<div class="hint">Vale só para ${b.n}. Se o padrão do catálogo mudar depois, a personalização é mantida e o administrador recebe um aviso para revisar.</div>`:''),
+  `${p.cust?`<button class="btn" data-act="procReset" data-b="${b.id}" data-id="${p.id}" style="margin-right:auto">${I('refresh',16)}Voltar ao padrão</button>`:''}${p.excl?`<button class="btn" data-act="procExclDel" data-b="${b.id}" data-id="${p.id}" style="margin-right:auto;color:var(--da)">Remover do edifício</button>`:''}<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="procCustSave" data-b="${b.id}" data-id="${p.id}">Salvar</button>`,
+  `${b.n} · ${sysOf(p.s).n}`);
+}
+
+/* ---------------- importação de programação (JSON) ---------------- */
+const PSCHEMA={"type":"object","additionalProperties":false,"required":["formato","versao","programa","sistemas"],"properties":{"formato":{"const":"predialmob.programa"},"versao":{"const":"1.0"},"edificio":{"type":"object","additionalProperties":false,"properties":{"nome":{"type":"string","minLength":1,"maxLength":120},"observacoes":{"type":"string","maxLength":2000}}},"programa":{"type":"object","additionalProperties":false,"required":["inicio"],"properties":{"inicio":{"type":"string","format":"date"},"horizonte_meses":{"type":"integer","minimum":1,"maximum":60},"origem":{"type":"string","maxLength":240}}},"sistemas":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/sistema"}}},"$defs":{"sistema":{"type":"object","additionalProperties":false,"required":["nome","procedimentos"],"properties":{"nome":{"type":"string","minLength":2,"maxLength":120},"detalhes":{"type":"string","maxLength":2000},"inicio":{"type":"string","format":"date"},"fim":{"type":"string","format":"date"},"procedimentos":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/procedimento"}}}},"procedimento":{"type":"object","additionalProperties":false,"required":["descricao","origem"],"properties":{"descricao":{"type":"string","minLength":3,"maxLength":240},"origem":{"type":"string","enum":["catalogo","exclusivo"]},"subsistema":{"type":"string","maxLength":120},"periodicidade":{"$ref":"#/$defs/periodicidade"},"responsaveis":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":2,"maxLength":240}},"referencias":{"type":"array","items":{"$ref":"#/$defs/referencia"}},"instrucoes":{"type":"string","maxLength":4000},"midia_url":{"type":"string","format":"uri","pattern":"^https://"},"primeira_execucao":{"type":"string","format":"date"},"ativo":{"type":"boolean"}},"allOf":[{"if":{"properties":{"origem":{"const":"exclusivo"}},"required":["origem"]},"then":{"required":["periodicidade","responsaveis"]}}]},"periodicidade":{"type":"object","additionalProperties":false,"required":["valor","unidade"],"properties":{"valor":{"type":"integer","minimum":1,"maximum":120},"unidade":{"type":"string","enum":["dias","semanas","meses","anos"]},"observacao":{"type":"string","maxLength":64}}},"referencia":{"type":"object","additionalProperties":false,"required":["fonte"],"properties":{"fonte":{"type":"string","minLength":2,"maxLength":240},"artigo":{"type":"string","maxLength":20},"pagina":{"type":"string","maxLength":20},"paragrafo":{"type":"string","maxLength":20},"detalhes":{"type":"string","maxLength":1000}}}}};
+const PEX={"formato":"predialmob.programa","versao":"1.0","edificio":{"nome":"Vila Toscana","observacoes":"Residencial com 48 unidades, habite-se em março/2023. Programa elaborado a partir do manual do proprietário."},"programa":{"inicio":"2026-11-01","horizonte_meses":24,"origem":"Gerado por IA a partir do manual do proprietário; revisado pelo engenheiro responsável."},"sistemas":[{"nome":"Instalações hidráulicas","detalhes":"2 reservatórios superiores de 15.000 L e 2 bombas de recalque Schneider BC-92.","procedimentos":[{"descricao":"Controle de nível dos reservatórios","origem":"catalogo","subsistema":"Água potável"},{"descricao":"Limpeza dos reservatórios de água não potável","origem":"catalogo","periodicidade":{"valor":3,"unidade":"meses"},"instrucoes":"Neste edifício a água de reúso recebe água de chuva com muito sedimento; por isso a limpeza é trimestral, e não semestral como no padrão.","primeira_execucao":"2026-11-15"},{"descricao":"Inspeção do sistema de reúso de água da chuva","origem":"exclusivo","periodicidade":{"valor":1,"unidade":"meses"},"responsaveis":["Equipe de manutenção local"],"referencias":[{"fonte":"Orientação do fabricante","detalhes":"Manual do filtro AquaVerde F-300, seção 4."}],"instrucoes":"1. Abrir a tampa do filtro de descarte.\n2. Retirar folhas e detritos.\n3. Verificar se a boia do reservatório de reúso está livre.\n4. Fotografar o filtro limpo."}]},{"nome":"Sistema de combate a incêndio","detalhes":"Rede de hidrantes com bomba de incêndio Jacuzzi e 24 extintores.","procedimentos":[{"descricao":"Estanqueidade","origem":"catalogo","subsistema":"Hidrantes"},{"descricao":"Acionamento das bombas de incêndio","origem":"catalogo","periodicidade":{"valor":2,"unidade":"semanas"},"responsaveis":["Equipe de manutenção local","Empresa especializada"],"referencias":[{"fonte":"CBIC","artigo":"7.2","pagina":"88"},{"fonte":"Instrução Normativa CBMSC","detalhes":"Exigência do Corpo de Bombeiros de SC para edificações com mais de 12 pavimentos."}]},{"descricao":"Inspeção dos extintores","origem":"catalogo","ativo":false}]},{"nome":"Pergolado / deck de madeira","detalhes":"Deck de cumaru na área da piscina, 60 m².","inicio":"2026-11-01","procedimentos":[{"descricao":"Reaplicar verniz","origem":"exclusivo","periodicidade":{"valor":1,"unidade":"anos","observacao":"preferencialmente no fim do inverno"},"responsaveis":["Empresa especializada"],"referencias":[{"fonte":"Orientação da construtora"}],"midia_url":"https://www.youtube.com/watch?v=exemplo123","primeira_execucao":"2027-08-01"}]}]};
+const TYN={object:'um objeto',array:'uma lista',string:'um texto',integer:'um número inteiro',number:'um número',boolean:'verdadeiro ou falso (true/false)'};
+function vsch(s,v,p,E,root){
+ if(s.$ref)s=s.$ref.split('/').slice(1).reduce((o,k)=>o[k],root);
+ const P=p||'(raiz)',ty=v===null?'null':Array.isArray(v)?'array':typeof v,j=k=>p?p+'.'+k:k;
+ if('const' in s&&v!==s.const){E.push([P,`deve ser exatamente "${s.const}"`]);return;}
+ if(s.enum&&!s.enum.includes(v)){E.push([P,`"${v}" não é aceito. Use: ${s.enum.join(', ')}`]);return;}
+ if(s.type&&!(s.type==='integer'?Number.isInteger(v):ty===s.type)){E.push([P,`deve ser ${TYN[s.type]}`]);return;}
+ if(ty==='string'){
+  if(s.minLength&&v.length<s.minLength)E.push([P,`texto muito curto (mínimo ${s.minLength})`]);
+  if(s.maxLength&&v.length>s.maxLength)E.push([P,`texto muito longo (máximo ${s.maxLength})`]);
+  if(s.pattern&&!new RegExp(s.pattern).test(v))E.push([P,s.pattern==='^https://'?'o link precisa começar com https://':'formato inválido']);
+  if(s.format==='date'&&(!/^\d{4}-\d{2}-\d{2}$/.test(v)||isNaN(new Date(v+'T00:00:00'))))E.push([P,`data inválida "${v}". Use AAAA-MM-DD`]);
+ }
+ if(ty==='number'){if('minimum' in s&&v<s.minimum)E.push([P,`mínimo ${s.minimum}`]);if('maximum' in s&&v>s.maximum)E.push([P,`máximo ${s.maximum}`]);}
+ if(ty==='array'){
+  if(s.minItems&&v.length<s.minItems)E.push([P,`a lista precisa ter pelo menos ${s.minItems} item`]);
+  if(s.uniqueItems&&new Set(v.map(x=>JSON.stringify(x))).size<v.length)E.push([P,'há itens repetidos']);
+  if(s.items)v.forEach((x,i)=>vsch(s.items,x,`${P==='(raiz)'?'':P}[${i}]`,E,root));
+ }
+ if(ty==='object'){
+  (s.required||[]).forEach(k=>{if(!(k in v))E.push([j(k),'campo obrigatório ausente']);});
+  if(s.additionalProperties===false)Object.keys(v).forEach(k=>{if(!(s.properties||{})[k])E.push([j(k),'campo não previsto no formato']);});
+  Object.entries(s.properties||{}).forEach(([k,ss])=>{if(k in v)vsch(ss,v[k],j(k),E,root);});
+  (s.allOf||[]).forEach(c=>{if(c.if){const t=[];vsch(c.if,v,p,t,root);if(!t.length&&c.then)vsch(c.then,v,p,E,root);}});
+ }
+}
+const nrm=x=>String(x).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+let IMP=null;
+const IMPSTEPS=['Aviso','Colar o JSON','Itens novos','Prévia do impacto','Confirmação'];
+function impShell(body,foot){const b=bOf(IMP.b);return openSheet(sheet('Importar programação',`<div class="stp">${IMPSTEPS.map((s,i)=>`<i class="${i<=IMP.step?'on':''}"></i>`).join('')}</div>`+body,foot,`${b.n} · passo ${IMP.step+1} de 5 · ${IMPSTEPS[IMP.step]}`),true);}
+function impAnalyse(){
+ const d=IMP.data,U=[],seen=new Set(),add=(k,t,n,ctx)=>{if(!seen.has(k)){seen.add(k);U.push({k,t,n,ctx});}};
+ d.sistemas.forEach((s,i)=>{
+  const sy=SYS.find(x=>nrm(x.n)===nrm(s.nome));
+  if(!sy)add('sis:'+nrm(s.nome),'Sistema',s.nome,`${s.procedimentos.length} procedimento(s) · sistemas[${i}]`);
+  s.procedimentos.forEach((p,k)=>{
+   if(p.origem==='catalogo'&&!PROCS.find(x=>nrm(x.n)===nrm(p.descricao)&&(!sy||x.s===sy.id)))add('proc:'+nrm(p.descricao),'Procedimento do catálogo',p.descricao,`sistemas[${i}].procedimentos[${k}]`);
+   (p.responsaveis||[]).forEach(r=>{if(!RESPS.find(x=>nrm(x)===nrm(r)))add('resp:'+nrm(r),'Responsável',r,p.descricao);});
+   (p.referencias||[]).forEach(r=>{if(!REFS.find(x=>nrm(x)===nrm(r.fonte)))add('ref:'+nrm(r.fonte),'Fonte de referência',r.fonte,p.descricao);});
+  });
+ });
+ IMP.unk=U;IMP.dec=IMP.dec||{};
+}
+function impPlan(){
+ const d=IMP.data,b=bOf(IMP.b),dec=IMP.dec,skip=k=>dec[k]==='skip',plan=[],ign=[];let n=0;
+ d.sistemas.forEach((s,i)=>{
+  const sy=SYS.find(x=>nrm(x.n)===nrm(s.nome)),sk='sis:'+nrm(s.nome);
+  if(!sy&&skip(sk)){s.procedimentos.forEach(p=>ign.push(p.descricao+' (sistema ignorado)'));return;}
+  const sid=sy?sy.id:'new:'+s.nome;
+  s.procedimentos.forEach(p=>{
+   const resp=(p.responsaveis||[]).filter(r=>!skip('resp:'+nrm(r))),refs=(p.referencias||[]).filter(r=>!skip('ref:'+nrm(r.fonte)));
+   let base=null;
+   if(p.origem==='catalogo'){base=PROCS.find(x=>nrm(x.n)===nrm(p.descricao)&&(!sy||x.s===sy.id));if(!base&&skip('proc:'+nrm(p.descricao))){ign.push(p.descricao+' (procedimento ignorado)');return;}}
+   const cust=!!base&&['periodicidade','responsaveis','referencias','instrucoes','subsistema','midia_url','primeira_execucao'].some(k=>k in p);
+   plan.push({id:base?base.id:'i'+(++n),s:sid,sname:s.nome,sub:p.subsistema||(base?base.sub:''),n:base?base.n:p.descricao,per:perFmt(p.periodicidade)||(base?base.per:'1 mês'),
+    resp:resp.length?resp.join(', '):(base?base.resp:'—'),ref:refs.length?refs.map(r=>r.fonte).join(' · '):(base?base.ref:'—'),art:refs[0]?[refs[0].artigo&&'Item '+refs[0].artigo,refs[0].pagina&&'p. '+refs[0].pagina,refs[0].detalhes].filter(Boolean).join(' · '):(base?base.art:''),
+    d:p.instrucoes||(base?base.d:''),ativo:p.ativo!==false,cust,excl:p.origem==='exclusivo',novo:!base&&p.origem==='catalogo',base:cust?base:null});
+  });
+ });
+ const cur=procsFor(b.id),curS=[...new Set(cur.map(p=>p.s))],newS=[...new Set(plan.map(p=>p.s))];
+ const H=d.programa.horizonte_meses||24;
+ IMP.plan=plan;IMP.ign=ign;
+ IMP.st={entram:newS.filter(s=>!curS.includes(s)),saem:curS.filter(s=>!newS.includes(s)),mant:newS.filter(s=>curS.includes(s)),
+  rem:cur.filter(p=>p.ativo!==false).reduce((a,p)=>a+occN(p.per),0),ger:plan.filter(p=>p.ativo).reduce((a,p)=>a+occN(p.per,H),0),H,
+  procOut:cur.filter(p=>!plan.find(x=>x.id===p.id)).length};
+}
+const sName=s=>typeof s==='string'&&s.startsWith('new:')?s.slice(4):sysOf(s).n;
+function impRender(){
+ const b=bOf(IMP.b);
+ if(IMP.step===0)return impShell(`<div class="alert" style="cursor:default;align-items:flex-start">${I('alert')}<div class="sm"><b>A programação vigente de ${b.n} será substituída.</b><br><span style="font-weight:500">Sistemas, procedimentos, personalizações e todas as manutenções futuras do edifício são trocados pelo conteúdo do arquivo.</span></div></div>
+  <div class="cols cols-2" style="gap:12px">${card('Será substituído',`<div class="card-b sm">${['Sistemas do edifício','Procedimentos e personalizações','Procedimentos exclusivos','Manutenções futuras'].map(x=>`<div class="row mb" style="gap:8px;color:var(--da)">${I('x',16)}<span style="color:var(--tx)">${x}</span></div>`).join('')}</div>`)}${card('Fica preservado',`<div class="card-b sm">${[`${b.atr} manutenções atrasadas`,`${b.pend} manutenções pendentes`,'Execuções realizadas','Evidências: fotos, notas e custos'].map(x=>`<div class="row mb" style="gap:8px;color:var(--ok)">${I('check',16)}<span style="color:var(--tx)">${x}</span></div>`).join('')}</div>`)}</div>
+  <div class="hint mt">Toda a operação fica registrada na auditoria: o JSON importado, quem importou, quando e cada alteração (antes → depois).</div>
+  <label class="row mt" style="gap:10px;font-weight:700"><input type="checkbox" id="impOk" data-impok> Entendi que a programação vigente será substituída</label>`,
+  `<button class="btn" data-act="close">Cancelar</button><button class="btn btn-da" id="impGo" disabled data-act="impNext">Continuar</button>`);
+ if(IMP.step===1){
+  const E=IMP.err||[];
+  return impShell(`<div class="row between wrap mb" style="gap:8px"><div class="sm mu">Cole o JSON no formato <b>predialmob.programa 1.0</b> ou selecione um arquivo.</div><div class="row wrap" style="gap:6px"><label class="btn btn-sm" style="cursor:pointer">${I('up',14)}Arquivo .json<input type="file" accept=".json,application/json" data-impfile hidden></label><button class="btn btn-sm" data-act="impEx">Exemplo</button><button class="btn btn-sm" data-act="impEx" data-bad="1">Exemplo com erros</button></div></div>
+  <textarea class="in code" id="impTxt" spellcheck="false" placeholder='{ "formato": "predialmob.programa", "versao": "1.0", ... }'>${(IMP.txt||'').replace(/</g,'&lt;')}</textarea>
+  ${E.length?`<div class="alert" style="cursor:default;margin-top:12px">${I('alert')}<div class="sm">${E[0][0]==='JSON'?'O texto não é um JSON válido.':`${E.length} erro${E.length>1?'s':''} de validação. Nada foi importado.`}</div></div><div class="card errl">${E.slice(0,12).map(e=>`<div class="li"><div class="grow"><div class="t mono">${e[0]}</div><div class="s">${e[1]}</div></div></div>`).join('')}${E.length>12?`<div class="li sm mu">+ ${E.length-12} erros</div>`:''}</div>`:''}
+  <div class="hint mt">O schema e as instruções para o agente de IA ficam disponíveis para download em Configurações › Importação.</div>`,
+  `<button class="btn" data-act="impBack">Voltar</button><button class="btn btn-p" data-act="impValidate">Validar</button>`);
+ }
+ if(IMP.step===2){
+  const U=IMP.unk,nm=IMP.data.edificio&&IMP.data.edificio.nome,diff=nm&&nrm(nm)!==nrm(b.n),all=U.every(u=>IMP.dec[u.k]);
+  return impShell(`<div class="alert in" style="cursor:default">${I('checkc')}<div class="sm">JSON válido · ${IMP.data.sistemas.length} sistemas · ${IMP.data.sistemas.reduce((a,s)=>a+s.procedimentos.length,0)} procedimentos</div></div>
+  ${diff?`<div class="alert wa" style="cursor:default">${I('alert')}<div class="sm">O arquivo foi feito para <b>${nm}</b>, mas você está importando em <b>${b.n}</b>. Confira antes de seguir.</div></div>`:''}
+  ${U.length?`<div class="sm b mb">${U.length} ite${U.length>1?'ns não existem':'m não existe'} no catálogo. Escolha o que fazer com cada um:</div><div class="card">${U.map(u=>`<div class="li" style="flex-wrap:wrap"><div class="grow" style="min-width:180px"><div class="xs mu">${u.t}</div><div class="t">${u.n}</div><div class="s">${u.ctx}</div></div><div class="seg" style="min-width:200px">${[['add','Cadastrar'],['skip','Ignorar']].map(o=>`<button class="${IMP.dec[u.k]===o[0]?'on':''}" data-act="impDec" data-k="${u.k}" data-v="${o[0]}">${o[1]}</button>`).join('')}</div></div>`).join('')}</div><div class="hint mt">Cadastrar inclui o item no catálogo técnico da plataforma. Ignorar um sistema ignora também os procedimentos dele.</div>`:`<div class="empty">Todos os sistemas, procedimentos, responsáveis e fontes já existem no catálogo.</div>`}`,
+  `<button class="btn" data-act="impBack">Voltar</button><button class="btn btn-p" data-act="impNext" ${all?'':'disabled'}>Ver prévia</button>`);
+ }
+ if(IMP.step===3){
+  const S=IMP.st,P=IMP.plan,cust=P.filter(p=>p.cust),ex=P.filter(p=>p.excl),off=P.filter(p=>!p.ativo),nv=P.filter(p=>p.novo);
+  const li=(t,s,c='')=>`<div class="li"><div class="grow"><div class="t">${t}</div>${s?`<div class="s">${s}</div>`:''}</div>${c}</div>`;
+  return impShell(`<div class="info mb"><div><div class="k">Futuras removidas</div><div class="v" style="color:var(--da)">−${S.rem}</div></div><div><div class="k">Novas geradas (${S.H} meses)</div><div class="v" style="color:var(--ok)">+${S.ger}</div></div><div><div class="k">Sistemas</div><div class="v">${S.mant.length+S.entram.length}</div></div><div><div class="k">Procedimentos ativos</div><div class="v">${P.filter(p=>p.ativo).length}</div></div></div>
+  <div class="alert in" style="cursor:default">${I('shieldc')}<div class="sm">Preservados: <b>${b.atr} atrasadas</b>, <b>${b.pend} pendentes</b> e <b>412 realizadas</b> com evidências.</div></div>
+  <details class="card mb" open><summary class="card-b b sm" style="cursor:pointer">Sistemas · ${S.entram.length} entram · ${S.saem.length} saem · ${S.mant.length} mantidos</summary>${S.entram.map(s=>li(sName(s),'Entra'+(String(s).startsWith('new:')?' · novo no catálogo':''),'<span class="bd bd-ok nodot">+</span>')).join('')}${S.saem.length?li(`${S.saem.length} saem da programação`,S.saem.map(sName).join(' · ')+' · histórico preservado','<span class="bd bd-da nodot">−</span>'):''}${S.mant.map(s=>li(sName(s),'Mantido · procedimentos substituídos pelo arquivo')).join('')}</details>
+  <details class="card mb"><summary class="card-b b sm" style="cursor:pointer">Procedimentos · ${cust.length} personalizados · ${ex.length} exclusivos · ${off.length} desativados · ${S.procOut} removidos</summary>${cust.map(p=>li(p.n,`<div class="diff mt">${p.base.per!==p.per?`<div>periodicidade: <span class="rm">${p.base.per}</span> → <span class="ad">${p.per}</span></div>`:''}${p.base.resp!==p.resp?`<div>responsáveis: <span class="ad">${p.resp}</span></div>`:''}${p.base.ref!==p.ref?`<div>referências: <span class="ad">${p.ref}</span></div>`:''}${p.base.d!==p.d?'<div>instruções: <span class="ad">personalizadas</span></div>':''}</div>`,'<span class="bd bd-br nodot">Personalizado</span>')).join('')}${ex.map(p=>li(p.n,`${p.sname} · a cada ${p.per} · ${p.resp}`,'<span class="bd bd-in nodot">Exclusivo</span>')).join('')}${nv.map(p=>li(p.n,'Será cadastrado no catálogo','<span class="bd bd-ok nodot">Novo</span>')).join('')}${off.map(p=>li(p.n,'Mantido no edifício sem gerar manutenções','<span class="bd nodot">Inativo</span>')).join('')}</details>
+  ${IMP.ign.length?`<details class="card mb"><summary class="card-b b sm" style="cursor:pointer">${IMP.ign.length} ignorado(s)</summary>${IMP.ign.map(x=>li(x)).join('')}</details>`:''}`,
+  `<button class="btn" data-act="impBack">Voltar</button><button class="btn btn-p" data-act="impNext">Continuar</button>`);
+ }
+ if(IMP.step===4)return impShell(`<div class="alert" style="cursor:default">${I('alert')}<div class="sm">Última etapa. Ao confirmar, a programação de <b>${b.n}</b> é substituída: −${IMP.st.rem} futuras, +${IMP.st.ger} novas.</div></div>${IMP.data.programa.origem?`<div class="card mb"><div class="card-b sm"><div class="lbl mb">Origem informada no arquivo</div>${IMP.data.programa.origem}</div></div>`:''}${fld(`Digite <b>${b.n}</b> para confirmar`,`<input class="in" data-confirm="${b.n}" placeholder="${b.n}">`)}`,
+  `<button class="btn" data-act="impBack">Voltar</button><button class="btn btn-da" id="cfbtn" disabled data-act="impApply">Importar programação</button>`);
+}
+
+function progTable(bid){
  const k='prog_'+state.route,f=curTab(k,'all');
- const pers=['all','1 semana','2 semanas','1 mês','3 meses','6 meses','1 ano'];
- const list=PROCS.filter(p=>p.ativo&&(f==='all'||p.per===f));
+ const L=procsFor(bid||CB().id).filter(p=>p.ativo!==false);
+ const pers=['all',...PERS_OPTS.filter(x=>L.some(p=>p.per===x))];
+ const list=L.filter(p=>f==='all'||p.per===f);
  return `<div class="chips mb">${pers.map(p=>`<button class="chip ${f===p?'on':''}" data-tab="${p}" data-tabg="${k}">${p==='all'?'Todas':'A cada '+p}</button>`).join('')}</div>
  <div class="card"><div class="tw"><table class="tbl"><thead><tr><th>Periodicidade</th><th>Sistema</th><th>Atividade</th><th>Referência</th><th>Responsável</th></tr></thead><tbody>
- ${list.map(p=>`<tr><td data-l="Periodicidade"><span class="bd bd-br nodot">${p.per}</span></td><td data-l="Sistema">${sysTag(p.s)}</td><td class="tm" data-l="Atividade"><b>${p.n}</b>${p.sub?`<div class="xs mu">${p.sub}</div>`:''}</td><td data-l="Referência">${p.ref}</td><td data-l="Responsável">${p.resp}</td></tr>`).join('')}
+ ${list.map(p=>`<tr><td data-l="Periodicidade"><span class="bd bd-br nodot">${p.per}</span></td><td data-l="Sistema">${sysTag(p.s)}</td><td class="tm" data-l="Atividade"><b>${p.n}</b>${badgeP(p)}${p.sub?`<div class="xs mu">${p.sub}</div>`:''}</td><td data-l="Referência">${p.ref}</td><td data-l="Responsável">${p.resp}</td></tr>`).join('')}
  </tbody></table></div></div>`;
 }
-V['s-prog']=()=>bldBar()+pageH('Programa de manutenção',`${CB().n} · ${PROCS.filter(p=>p.ativo).length} procedimentos ativos em 19 sistemas`,`<button class="btn" data-act="toast" data-msg="Programa exportado em PDF (simulação)">${I('down',18)}Exportar</button>`)+progTable();
+V['s-prog']=()=>bldBar()+pageH('Programa de manutenção',`${CB().n} · ${procsFor(CB().id).filter(p=>p.ativo!==false).length} procedimentos ativos em ${new Set(procsFor(CB().id).map(p=>p.s)).size} sistemas`,`<button class="btn" data-act="toast" data-msg="Programa exportado em PDF (simulação)">${I('down',18)}Exportar</button>`)+progTable();
 
 const TEAM=[['Carla Mendes','Gestora da administradora','all','hoje, 07:55',1],['Marcelo Dias','Assistente administrativo','all','há 2 dias',0],['João Pereira','Zelador',['b1','b2'],'hoje, 06:48',0],['Rafael Souza','Equipe de manutenção',['b1','b3','b14'],'ontem, 16:10',0],['Clima Frio Serviços','Empresa terceirizada · ar condicionado',['b1','b2','b3'],'há 9 dias',0]];
 V['s-team']=()=>{
@@ -898,16 +1052,16 @@ V.ed=()=>{
    const ctl=state.role==='constr'?card('Chamados neste edifício',setRow('Usar os chamados do Predial Mob','Desligado: o menu de abertura e visualização de chamados some para todos os usuários do edifício (administradora e equipe)',`<button class="sw ${b.chOff?'':'on'}" data-act="chToggle" data-id="${b.id}" aria-label="Usar chamados"></button>`,'head')+(b.chOff?`<div class="card-b" style="border-top:1px solid var(--bd)"><div class="lbl mb">Canal próprio exibido aos usuários</div><div class="g2">${fld('Site ou sistema',`<input class="in" value="${(b.canal||CANAL).url}">`)}${fld('Telefone',`<input class="in" value="${(b.canal||CANAL).tel}">`)}</div>${fld('E-mail',`<input class="in" value="${(b.canal||CANAL).mail}">`)}<button class="btn btn-p btn-sm" data-act="toast" data-msg="Canal salvo">Salvar canal</button></div>`:''))+'<div class="mt"></div>':'';
    body=ctl+(b.chOff?(state.role==='constr'?`<div class="sm b mu mb">O que os usuários do edifício veem:</div>`:'')+canalCard(b):card('',CH.filter(c=>c.b===b.id&&chVisible(c)).map(c=>chItem(c)).join('')||'<div class="empty">Nenhum chamado para este edifício.</div>'));
   }
-  if(t==='prog')body=progTable();
+  if(t==='prog')body=(b.prog?`<div class="alert in" style="cursor:default">${I('up')}<div class="sm">Programação importada ${b.imp.d}. Itens marcados como personalizados ou exclusivos valem só para este edifício.</div></div>`:'')+progTable(b.id);
   return head+tb+body;
  }
  const tb=tabs(k,[['dados','Dados'],['sis','Sistemas',b.sis||19],['proc','Procedimentos',b.proc||30],['prog','Programa'],['cfg','Configurações']]);
  let body='';
  if(t==='dados')body=`<div class="cols cols-2">${card('Dados do edifício',`<div class="card-b">${fld('Nome',`<input class="in" value="${b.n}">`)}${fld('Construtora',sel(CONSTR.map(c=>c.n),cOf(b.c).n))}<div class="g2">${fld('Telefone','<input class="in" value="(49) 3442-0000">')}${fld('E-mail','<input class="in" value="contato@condominio.com.br">')}</div>${fld('Administradora',sel(ADMS.map(a=>a.n+(a.t==='Síndico'?' (síndico)':'')),aOf(b.ad).n),'Empresa administradora ou síndico com conta de administradora')}<button class="btn btn-p" data-act="toast" data-msg="Alterações salvas (simulação)">Salvar alterações</button></div>`)}
   ${card('Resumo',`<div class="card-b"><div class="info"><div><div class="k">Sistemas</div><div class="v">${b.sis}</div></div><div><div class="k">Procedimentos ativos</div><div class="v">${b.proc}</div></div><div><div class="k">Manutenções geradas</div><div class="v">1.284</div></div><div><div class="k">Baixas registradas</div><div class="v">412</div></div><div><div class="k">Usuários</div><div class="v">5</div></div><div><div class="k">Cliente desde</div><div class="v">03/2023</div></div></div></div>`)}</div>`;
- if(t==='sis')body=card('Sistemas do edifício',`<div class="tw"><table class="tbl"><thead><tr><th>Sistema</th><th>Início</th><th>Fim</th><th>Procedimentos</th><th>Manutenções geradas</th><th></th></tr></thead><tbody>${[...new Set(PROCS.map(p=>p.s))].map((s,j)=>`<tr><td class="tm" data-l="Sistema">${sysTag(s)}</td><td data-l="Início">01/0${1+j%9}/2025</td><td data-l="Fim">31/12/2030</td><td data-l="Procedimentos">${PROCS.filter(p=>p.s===s).length}</td><td data-l="Geradas">${40+j*13}</td><td data-l=""><button class="btn btn-sm" data-act="addSys">${I('edit',14)}Editar</button></td></tr>`).join('')}</tbody></table></div>`,`<button class="btn btn-p btn-sm" data-act="addSys">${I('plus',16)}Adicionar sistema</button>`);
- if(t==='proc')body=`<div data-fscope>${filterBar()}${card('',`<div class="tw"><table class="tbl"><thead><tr><th>Procedimento</th><th>Sistema</th><th>Periodicidade</th><th>Ativo</th></tr></thead><tbody>${PROCS.map(p=>`<tr class="fitem" data-sys="${p.s}"><td class="tm" data-l="Procedimento"><b>${p.n}</b><div class="xs mu">${p.ref}</div></td><td data-l="Sistema">${sysTag(p.s)}</td><td data-l="Periodicidade">${p.per}</td><td data-l="Ativo">${sw(p.ativo)}</td></tr>`).join('')}</tbody></table></div>`)}</div>`;
- if(t==='prog')body=`<div class="alert br" style="cursor:default">${I('refresh')}<div class="grow sm">O programa é gerado automaticamente a partir dos sistemas e procedimentos ativos. Recrie apenas após mudanças grandes.</div><button class="btn btn-da btn-sm" data-act="recriar" data-n="${b.n}">Recriar programa</button></div>`+progTable();
+ if(t==='sis')body=card('Sistemas do edifício',`<div class="tw"><table class="tbl"><thead><tr><th>Sistema</th><th>Início</th><th>Fim</th><th>Procedimentos</th><th>Manutenções geradas</th><th></th></tr></thead><tbody>${[...new Set(procsFor(b.id).map(p=>p.s))].map((s,j)=>`<tr><td class="tm" data-l="Sistema">${sysTag(s)}</td><td data-l="Início">01/0${1+j%9}/2025</td><td data-l="Fim">31/12/2030</td><td data-l="Procedimentos">${procsFor(b.id).filter(p=>p.s===s).length}</td><td data-l="Geradas">${40+j*13}</td><td data-l=""><button class="btn btn-sm" data-act="addSys">${I('edit',14)}Editar</button></td></tr>`).join('')}</tbody></table></div>`,`<button class="btn btn-p btn-sm" data-act="addSys">${I('plus',16)}Adicionar sistema</button>`);
+ if(t==='proc')body=procAdmTab(b);
+ if(t==='prog')body=`<div class="alert br" style="cursor:default;flex-wrap:wrap">${I('refresh')}<div class="grow sm" style="min-width:220px">O programa é gerado a partir dos sistemas, procedimentos e personalizações deste edifício. Também é possível importar uma programação pronta em JSON.</div><div class="row wrap" style="gap:8px"><button class="btn btn-sm" data-act="impStart" data-b="${b.id}">${I('up',16)}Importar programação</button><button class="btn btn-da btn-sm" data-act="recriar" data-n="${b.n}">Recriar programa</button></div></div>`+(b.imp?`<div class="alert in" style="cursor:default">${I('checkc')}<div class="sm">Programação importada ${b.imp.d} · ${b.imp.o}</div></div>`:'')+progTable(b.id);
  if(t==='cfg')body=`<div class="alert ${b.chOff?'wa':'in'}" style="cursor:default">${I('head')}<div class="sm">Chamados neste edifício: <b>${b.chOff?'ocultos pela construtora (canal próprio)':'ativos'}</b>. Essa opção é controlada pela construtora.</div></div><div class="cols cols-2">${card('Situações padrão',`<div class="card-b">${fld('Manutenção aberta',sel(['Pendente','Aguardando'],'Pendente'),'Situação aplicada às ocorrências geradas')}${fld('Manutenção realizada',sel(['Realizada','Concluída'],'Realizada'))}${fld('Abertura de chamado',sel(['Aberto','Em análise'],'Aberto'),'Antes não havia situação padrão definida, o que impedia a abertura de chamados')}<button class="btn btn-p" data-act="toast" data-msg="Configurações salvas (simulação)">Salvar</button></div>`)}
   ${card('Situações deste edifício',[['Pendente','#d97706','manutenção'],['Realizada','#15a34a','manutenção'],['Aberto','#0279b8','chamado'],['Em análise','#4f3ff0','chamado'],['Agendado','#c76d04','chamado'],['Concluído','#15a34a','chamado']].map(s=>`<div class="li"><span class="swatch" style="background:${s[1]}"></span><div class="grow"><div class="t">${s[0]}</div><div class="s">${s[2]}</div></div><button class="ib" data-act="toast" data-msg="Editar situação (simulação)">${I('edit',16)}</button></div>`).join(''),`<button class="btn btn-sm" data-act="toast" data-msg="Nova situação (simulação)">${I('plus',16)}Nova</button>`)}</div>`;
  return head+tb+body;
@@ -1184,8 +1338,40 @@ const ACT={
   `<div class="fld"><label>Responsáveis recomendados</label><div class="chips" style="flex-wrap:wrap">${RESPS.map(r=>`<button class="chip ${r===p.resp?'on':''}" data-act="sw">${r}</button>`).join('')}</div></div>`+
   fld('Detalhes / instruções',`<textarea class="in">${p.d}</textarea>`)+fld('Vídeo de orientação (URL)','<input class="in" placeholder="https://youtube.com/...">')+
   `<div class="lbl mb">Referências normativas</div><div class="card mb"><div class="li"><div class="grow"><div class="t">${p.ref}</div><div class="s">${p.art}</div></div><button class="ib" data-act="toast" data-msg="Editar referência">${I('edit',16)}</button></div><div class="li" data-act="toast" data-msg="Adicionar referência com artigo, página e parágrafo" style="color:var(--brand);font-weight:700">${I('plus',18)}Adicionar referência</div></div>`+
-  `<div class="card">${setRow('Procedimento ativo','Inativos não geram novas manutenções',sw(p.ativo))}</div><div class="alert wa mt" style="cursor:default">${I('alert')}<div class="sm">Alterar a periodicidade afeta <b>14 edifícios</b>. As manutenções futuras serão recalculadas e o histórico é preservado.</div></div>`,
+  `<div class="card">${setRow('Procedimento ativo','Inativos não geram novas manutenções',sw(p.ativo))}</div><div class="alert wa mt" style="cursor:default">${I('alert')}<div class="sm">Alterar o padrão afeta <b>14 edifícios</b>. <b>2 edifícios</b> têm este procedimento personalizado (Vila Toscana, Sky Moron): mantêm a personalização e o administrador recebe um aviso para revisar. As futuras são recalculadas e o histórico é preservado.</div></div>`,
   `<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="done" data-msg="Procedimento salvo">Salvar</button>`,p.n?sysOf(p.s).n:''));},
+ procCust:t=>{const b=bOf(t.dataset.b),p=procsFor(b.id).find(x=>x.id===t.dataset.id);if(p)openSheet(procCustSheet(b,p));},
+ procCustSave:t=>{const b=bOf(t.dataset.b),id=t.dataset.id,g=x=>document.getElementById(x),per=g('pcPer').value,n=g('pcN').value.trim()||'—',d=g('pcD').value,resp=[...document.querySelectorAll('#pcR .chip.on')].map(x=>x.textContent).join(', ');
+  const cur=procsFor(b.id).find(x=>x.id===id),old=cur.per;
+  if(b.prog||cur.excl){Object.assign(cur,{per,n,d,resp:resp||cur.resp});if(!cur.excl){cur.base=cur.base||procOf(id);cur.cust=!!cur.base;}}
+  else{const base=procOf(id),prev=(CUST[b.id]||{})[id]||{},o={};if(per!==base.per)o.per=per;if(n!==base.n)o.n=n;if(d!==base.d)o.d=d;if(resp&&resp!==base.resp)o.resp=resp;if(prev.ref)o.ref=prev.ref;CUST[b.id]=CUST[b.id]||{};if(Object.keys(o).length)CUST[b.id][id]=o;else delete CUST[b.id][id];}
+  AUDIT.unshift(['Ana Ribeiro',cur.excl?'alterou procedimento exclusivo':'personalizou procedimento','Procedimento do edifício',`${b.n} · ${n}`,'periodicidade',old,per,'agora','187.45.10.22']);
+  closeSheet();render();toast(old===per?'Personalização salva · registrada na auditoria':`Personalização salva · futuras recalculadas (${occN(old)} → ${occN(per)} em 24 meses)`);},
+ procReset:t=>{const b=bOf(t.dataset.b),id=t.dataset.id,base=procOf(id);if(b.prog){const i=b.prog.findIndex(x=>x.id===id);if(i>=0&&base)b.prog[i]={...base};}else if(CUST[b.id])delete CUST[b.id][id];
+  AUDIT.unshift(['Ana Ribeiro','voltou ao padrão','Procedimento do edifício',`${b.n} · ${base?base.n:id}`,'personalizado','sim','não','agora','187.45.10.22']);closeSheet();render();toast('Procedimento voltou ao padrão do catálogo · futuras recalculadas');},
+ procExclNew:t=>{const b=bOf(t.dataset.b);openSheet(sheet('Novo procedimento exclusivo',`<div class="alert in" style="cursor:default">${I('build')}<div class="sm">Vale só para <b>${b.n}</b>. Não entra no catálogo nem aparece nos outros edifícios.</div></div><div class="g2">${fld('Sistema',sel(SYS.map(s=>[String(s.id),s.n]),'1','id="pxS"'))}${fld('Subsistema','<input class="in" id="pxSub" placeholder="Opcional">')}</div>${fld('Descrição','<input class="in" id="pxN" placeholder="Ex.: Inspeção do filtro de reúso">')}<div class="g2">${fld('Periodicidade',sel(PERS_OPTS,'1 mês','id="pxP"'))}${fld('Primeira execução','<input class="in" type="date" value="2026-11-01">')}</div>${respChips('Equipe de manutenção local').replace('id="pcR"','id="pxR"')}${fld('Instruções para a equipe','<textarea class="in" id="pxD" placeholder="Passos curtos e simples"></textarea>')}<div class="g2">${fld('Fonte da referência',sel(REFS,'Orientação do fabricante','id="pxF"'))}${fld('Artigo / página','<input class="in" placeholder="Ex.: seção 4 · p. 12">')}</div>${fld('Vídeo de orientação (URL)','<input class="in" placeholder="https://...">')}`,`<button class="btn" data-act="close">Cancelar</button><button class="btn btn-p" data-act="procExclSave" data-b="${b.id}">Criar e gerar manutenções</button>`,b.n));},
+ procExclSave:t=>{const b=bOf(t.dataset.b),g=x=>document.getElementById(x),n=g('pxN').value.trim();if(!n){g('pxN').classList.add('err');toast('Informe a descrição do procedimento','alert');return;}
+  const p={id:'x'+Date.now(),s:+g('pxS').value,sub:g('pxSub').value,n,per:g('pxP').value,resp:[...document.querySelectorAll('#pxR .chip.on')].map(x=>x.textContent).join(', ')||RESPS[0],ref:g('pxF').value,art:'',d:g('pxD').value,ativo:true,excl:true};
+  (b.prog||(EXCL[b.id]=EXCL[b.id]||[])).push(p);AUDIT.unshift(['Ana Ribeiro','criou procedimento exclusivo','Procedimento do edifício',`${b.n} · ${n}`,'periodicidade','—',p.per,'agora','187.45.10.22']);
+  closeSheet();render();toast(`Procedimento exclusivo criado · ${occN(p.per)} manutenções geradas em 24 meses`);},
+ procExclDel:t=>{const b=bOf(t.dataset.b),L=b.prog||EXCL[b.id]||[],i=L.findIndex(x=>x.id===t.dataset.id);if(i>=0){const p=L.splice(i,1)[0];AUDIT.unshift(['Ana Ribeiro','removeu procedimento exclusivo','Procedimento do edifício',`${b.n} · ${p.n}`,'ativo','sim','removido','agora','187.45.10.22']);}closeSheet();render();toast('Procedimento removido · futuras canceladas · histórico preservado');},
+ impStart:t=>{IMP={b:t.dataset.b,step:0,txt:'',dec:{}};impRender();},
+ impNext:()=>{IMP.step++;if(IMP.step===3)impPlan();impRender();},
+ impBack:()=>{if(IMP.step===1)IMP.txt=(document.getElementById('impTxt')||{}).value||IMP.txt;IMP.step--;IMP.err=[];impRender();},
+ impEx:t=>{const o=JSON.parse(JSON.stringify(PEX));if(t.dataset.bad){o.versao='1.1';o.programa.inicio='01/11/2026';o.sistemas[0].procedimentos[2]={descricao:'Inspeção do sistema de reúso',origem:'exclusivo',periodicidade:{valor:1,unidade:'mes'}};o.sistemas[1].procedimentos[1].prioridade='alta';}
+  const ta=document.getElementById('impTxt');ta.value=JSON.stringify(o,null,2);IMP.txt=ta.value;},
+ impValidate:()=>{const txt=document.getElementById('impTxt').value;IMP.txt=txt;IMP.err=[];let d;
+  if(!txt.trim()){IMP.err=[['JSON','O campo está vazio. Cole o JSON ou selecione um arquivo.']];return impRender();}
+  try{d=JSON.parse(txt);}catch(e){IMP.err=[['JSON',e.message]];return impRender();}
+  vsch(PSCHEMA,d,'',IMP.err,PSCHEMA);if(IMP.err.length)return impRender();
+  IMP.data=d;IMP.dec={};impAnalyse();IMP.step=2;impRender();},
+ impDec:t=>{ACT.seg(t);IMP.dec[t.dataset.k]=t.dataset.v;const n=ov.querySelector('[data-act=impNext]');if(n)n.disabled=!IMP.unk.every(u=>IMP.dec[u.k]);},
+ impApply:()=>{const b=bOf(IMP.b),old=procsFor(b.id).filter(p=>p.ativo!==false).length,map={},S=IMP.st;
+  IMP.unk.filter(u=>IMP.dec[u.k]==='add').forEach(u=>{if(u.t==='Sistema'){const id=Math.max(...SYS.map(s=>s.id))+1;SYS.push({id,n:u.n,c:'#a16207'});map['new:'+u.n]=id;}if(u.t==='Responsável')RESPS.push(u.n);if(u.t==='Fonte de referência')REFS.push(u.n);});
+  b.prog=IMP.plan.map(p=>({...p,s:typeof p.s==='string'?(map[p.s]||p.s):p.s}));
+  b.imp={d:'hoje',o:IMP.data.programa.origem||'JSON predialmob.programa 1.0'};b.sis=new Set(b.prog.map(p=>p.s)).size;b.proc=b.prog.filter(p=>p.ativo).length;
+  AUDIT.unshift(['Ana Ribeiro','importou programação','Edifício',`${b.n} · JSON predialmob.programa 1.0 · ${b.sis} sistemas · −${S.rem} futuras, +${S.ger} novas`,'procedimentos ativos',String(old),String(b.proc),'agora','187.45.10.22']);
+  IMP=null;closeSheet();render();toast(`Programação importada · −${S.rem} futuras, +${S.ger} novas · registrada na auditoria`);},
  auditDet:t=>{const a=AUDIT[+t.dataset.i];openSheet(sheet('Detalhe da alteração',`<div class="row mb">${a[0]==='Sistema'?'':av(a[0])}<div><div class="b">${a[0]}</div><div class="sm mu">${a[7]} · IP ${a[8]}</div></div></div><div class="info mb"><div><div class="k">Ação</div><div class="v">${a[1]}</div></div><div><div class="k">Entidade</div><div class="v">${a[2]}</div></div></div><div class="sm b mb">${a[3]}</div><div class="diff"><div>campo: <b>${a[4]}</b></div><div class="rm">− ${a[5]}</div><div class="ad">+ ${a[6]}</div></div>`),true);},
 };
 function applyFilter(sc){
@@ -1211,6 +1397,9 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
  const t=e.target;
+ if(t.matches('[data-impfile]')&&t.files[0]){const f=t.files[0],r=new FileReader();r.onload=()=>{const ta=document.getElementById('impTxt');ta.value=r.result;IMP.txt=r.result;toast('Arquivo carregado: '+f.name,'file');};r.readAsText(f);}
+ if(t.matches('[data-impok]'))document.getElementById('impGo').disabled=!t.checked;
+ if(t.matches('[data-perimp]'))document.getElementById('pcImp').innerHTML=impTxt(t.dataset.perimp,t.value);
  if(t.matches('[data-sysf]')){const sc=t.closest('[data-fscope]');sc.dataset.s=t.value;applyFilter(sc);}
  if(t.matches('[data-rolesel]')){state.role=t.value;state.stack=[];state.tabs={};go(ROLES[t.value].nav[0][0]);toast('Visualizando como '+ROLES[t.value].lbl,'swap');}
  if(t.id==='regst')t.classList.remove('err');
